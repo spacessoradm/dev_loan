@@ -24,72 +24,199 @@ export default function ApplicationsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [processingAction, setProcessingAction] = useState(false)
   const [userRole, setUserRole] = useState<string | null>(null)
+  const [remarks, setRemarks] = useState<string>("")
   const supabase = createClientComponentClient()
+  const [bankers, setBankers] = useState<any[]>([]);
+
+  const BASE_STORAGE_URL = "https://pbvigsmmzasgbuqgwwdt.supabase.co/storage/v1/object/public/documents/";
+
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const {
           data: { session },
-        } = await supabase.auth.getSession()
+        } = await supabase.auth.getSession();
 
-        if (!session) {
-          return
-        }
+        if (!session) return;
 
-        // Check if user is admin
         const { data: userData, error: userError } = await supabase
           .from("profiles")
-          .select("role")
-          .eq("id", session.user.id)
-          .single()
+          .select("*")
+          .eq("user_id", session.user.id)
+          .single();
 
-        if (userError) {
-          throw userError
-        }
+        if (userError) throw userError;
 
-        setUserRole(userData?.role)
+        setUserRole(userData?.role);
 
-        if (userData?.role !== "admin") {
+        if (userData?.role !== "admin" && userData?.role !== "banker") {
           toast({
             title: "Access Denied",
             description: "You don't have permission to view this page",
             variant: "destructive",
-          })
-          return
+          });
+          return;
         }
 
-        // Fetch all loan applications
-        const { data, error } = await supabase
-          .from("loan_applications")
-          .select("*")
-          .order("created_at", { ascending: false })
+        // Fetch bankers
+        const { data: bankersData, error: bankersError } = await supabase
+          .from("profiles")
+          .select("id, full_name, bank_name")
+          .eq("role", "banker")
+          .eq("account_status", "activated");
 
-        if (error) {
-          throw error
+        if (bankersError) throw bankersError;
+        setBankers(bankersData || []);
+
+        // Fetch applications based on role
+        let applicationsQuery = supabase.from("applications").select("*").order("created_at", { ascending: false });
+
+        if (userData.role === "banker") {
+          applicationsQuery = applicationsQuery.eq("assigned_to", userData?.id);
         }
 
-        setApplications(data || [])
+        const { data, error } = await applicationsQuery;
+        if (error) throw error;
+
+        setApplications(data || []);      
       } catch (error: any) {
-        console.error("Error fetching applications:", error)
         toast({
           title: "Error",
           description: "Failed to load applications",
           variant: "destructive",
-        })
+        });
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
+    };
+
+    fetchData();
+  }, []);
+
+  const handleAssignBanker = async (applicationId: string, bankerId: string) => {
+    try {
+      const { error } = await supabase.from("applications").update({ assigned_to: bankerId }).eq("id", applicationId);
+      if (error) throw error;
+  
+      setApplications(applications.map((app) => (app.id === applicationId ? { ...app, assigned_to: bankerId } : app)));
+  
+      toast({
+        title: "Banker Assigned",
+        description: "The application has been assigned successfully",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to assign banker",
+        variant: "destructive",
+      });
     }
+  };
 
-    fetchData()
-  }, [supabase])
+  const getDocumentUrls = async (docPaths: string[]) => {
+    try {
+      if (!docPaths || docPaths.length === 0) return [];
+  
+      const signedUrls = await Promise.all(
+        docPaths.map(async (path) => {
+          const { data, error } = await supabase.storage
+            .from("documents")
+            .createSignedUrl(path, 60 * 60); // 1-hour expiration
+  
+          if (error) {
+            console.error("Error getting signed URL:", error);
+            return null;
+          }
+          return { name: path.split("/").pop(), url: data.signedUrl };
+        })
+      );
+  
+      return signedUrls.filter((url) => url !== null);
+    } catch (error) {
+      return [];
+    }
+  };
+  
+  
+  const handleViewApplication = async (application: any) => {
+    setSelectedApplication(application);
+    setIsDialogOpen(true);
+  
+    if (application.doc_paths) {
+      const docUrls = await getDocumentUrls(application.doc_paths);
+      setSelectedApplication((prev: any) => ({ ...prev, docUrls }));
+    }
+  };
+  
 
-  const handleViewApplication = (application: any) => {
-    setSelectedApplication(application)
-    setIsDialogOpen(true)
-  }
+  const handleAcceptApplication = async (applicationId: string) => {
+    if (userRole !== "banker") return; // Ensure only bankers can accept
+  
+    try {
+      const { error } = await supabase
+        .from("applications")
+        .update({ status: "accepted" })
+        .eq("id", applicationId);
+  
+      if (error) {
+        throw error;
+      }
+  
+      // Update local state
+      setApplications(applications.map(app => 
+        app.id === applicationId ? { ...app, status: "accepted" } : app
+      ));
+  
+      toast({
+        title: "Application Accepted",
+        description: "You have accepted the application successfully.",
+      });
+  
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to accept application",
+        variant: "destructive",
+      });
+    }
+  };
 
+  const handleRequestApplication = async (applicationId: string) => {
+    if (userRole !== "banker") return;
+  
+    try {
+      const { error } = await supabase
+        .from("applications")
+        .update({ 
+          status: "request supporting documents", 
+          remarks: remarks // Assuming remarks is a state variable
+        })
+        .eq("id", applicationId);
+  
+      if (error) throw error;
+  
+      // 🔄 Update the state to reflect the change
+      setApplications(applications.map(app => 
+        app.id === applicationId 
+          ? { ...app, status: "request supporting documents", remarks } 
+          : app
+      ));
+  
+      toast({
+        title: "Request Sent",
+        description: "Requested supporting documents successfully.",
+      });
+  
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to request documents",
+        variant: "destructive",
+      });
+    }
+  };
+  
   const handleApproveApplication = async (applicationId: string) => {
     if (userRole !== "admin") return
 
@@ -169,7 +296,6 @@ export default function ApplicationsPage() {
 
       setIsDialogOpen(false)
     } catch (error: any) {
-      console.error("Error approving application:", error)
       toast({
         title: "Error",
         description: error.message || "Failed to approve application",
@@ -215,20 +341,22 @@ export default function ApplicationsPage() {
   const getStatusBadge = (status: string) => {
     switch (status.toLowerCase()) {
       case "approved":
-        return <Badge className="bg-green-500">Approved</Badge>
+        return <span className="inline-block bg-green-500 text-white px-2 py-1 rounded">Approved</span>
+      case "accepted":
+        return <span className="inline-block bg-green-500 text-white px-2 py-1 rounded">Accepted</span>
       case "pending":
-        return <Badge className="bg-yellow-500">Pending</Badge>
+        return <span className="inline-block bg-yellow-500 text-white px-2 py-1 rounded">Pending</span>
       case "rejected":
         return <Badge className="bg-red-500">Rejected</Badge>
       default:
-        return <Badge>{status}</Badge>
+        return <span className="inline-block bg-blue-500 text-white px-2 py-1 rounded">{status}</span>
     }
   }
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "USD",
+      currency: "MYR",
     }).format(amount)
   }
 
@@ -247,8 +375,8 @@ export default function ApplicationsPage() {
       </div>
     )
   }
-
-  if (userRole !== "admin") {
+ 
+  if (userRole !== "admin" && userRole !== "banker") {
     return (
       <div className="container mx-auto py-6">
         <Card>
@@ -282,6 +410,7 @@ export default function ApplicationsPage() {
                   <TableHead>Term</TableHead>
                   <TableHead>Date Applied</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Banker</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -297,9 +426,41 @@ export default function ApplicationsPage() {
                     <TableCell>{formatDate(application.created_at)}</TableCell>
                     <TableCell>{getStatusBadge(application.status)}</TableCell>
                     <TableCell>
+                      {userRole === "admin" ? (
+                        <select
+                          className="border rounded px-2 py-1"
+                          value={application.assigned_to || ""}
+                          onChange={(e) => handleAssignBanker(application.id, e.target.value)}
+                        >
+                          <option value="">Unassigned</option>
+                          {bankers
+                            .filter((banker) => banker.bank_name === application.bank) // ✅ Filter by bank_name
+                            .map((banker) => (
+                              <option key={banker.id} value={banker.id}>
+                                {banker.full_name}
+                              </option>
+                            ))}
+                        </select>
+                      ) : (
+                        <span>
+                          {bankers.find((b) => b.id === application.assigned_to)?.full_name || "Unassigned"}
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell>
                       <Button variant="ghost" size="icon" onClick={() => handleViewApplication(application)}>
                         <Eye className="h-4 w-4" />
                       </Button>
+                      {/* Show Accept button only for banker and if status is pending */}
+                      {userRole === "banker" && application.status === "pending" && (
+                        <Button
+                          variant="secondary"
+                          className="ml-2"
+                          onClick={() => handleAcceptApplication(application.id)}
+                        >
+                          Accept
+                        </Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -318,7 +479,7 @@ export default function ApplicationsPage() {
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent className="max-w-3xl">
             <DialogHeader>
-              <DialogTitle>Loan Application Details</DialogTitle>
+              <DialogTitle>Loan Application Details - ({selectedApplication.bank})</DialogTitle>
               <DialogDescription>Review the application details before making a decision</DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
@@ -326,19 +487,20 @@ export default function ApplicationsPage() {
                 <div>
                   <h3 className="font-semibold mb-2">Applicant Information</h3>
                   <p>
-                    <span className="text-muted-foreground">Name:</span> {selectedApplication.first_name}{" "}
+                    <span className="text-muted-foreground">Name:</span> {selectedApplication.full_name}{" "}
                     {selectedApplication.last_name}
                   </p>
                   <p>
                     <span className="text-muted-foreground">Email:</span> {selectedApplication.email}
                   </p>
                   <p>
-                    <span className="text-muted-foreground">Phone:</span> {selectedApplication.phone}
+                    <span className="text-muted-foreground">Phone:</span> {selectedApplication.mobile}
                   </p>
                   <p>
                     <span className="text-muted-foreground">Address:</span> {selectedApplication.address}
                   </p>
                 </div>
+
                 <div>
                   <h3 className="font-semibold mb-2">Loan Details</h3>
                   <p>
@@ -355,46 +517,83 @@ export default function ApplicationsPage() {
                     <span className="text-muted-foreground">Purpose:</span> {selectedApplication.purpose}
                   </p>
                 </div>
-              </div>
-              <div>
-                <h3 className="font-semibold mb-2">Financial Information</h3>
-                <p>
-                  <span className="text-muted-foreground">Employment Status:</span>{" "}
-                  {selectedApplication.employment_status}
-                </p>
-                <p>
-                  <span className="text-muted-foreground">Annual Income:</span> {selectedApplication.annual_income}
-                </p>
-              </div>
-              <div>
-                <h3 className="font-semibold mb-2">Application Status</h3>
-                <p>
-                  <span className="text-muted-foreground">Status:</span> {getStatusBadge(selectedApplication.status)}
-                </p>
-                <p>
-                  <span className="text-muted-foreground">Date Applied:</span>{" "}
-                  {formatDate(selectedApplication.created_at)}
-                </p>
+
+                <div>
+                  <h3 className="font-semibold mb-2">Financial Information</h3>
+                  <p>
+                    <span className="text-muted-foreground">Employment Status:</span>{" "}
+                    {selectedApplication.employment}
+                  </p>
+                  <p>
+                    <span className="text-muted-foreground">Annual Income:</span> {selectedApplication.income}
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold mb-2">Application Status</h3>
+                  <p>
+                    <span className="text-muted-foreground">Status:</span> {getStatusBadge(selectedApplication.status)}
+                  </p>
+                  <p>
+                    <span className="text-muted-foreground">Date Applied:</span>{" "}
+                    {formatDate(selectedApplication.created_at)}
+                  </p>
+                </div>
+
+                {userRole === "banker" && selectedApplication.status === "accepted" && (
+                  <div>
+                    <textarea 
+                      placeholder="Leave a remark for this request..."
+                      value={remarks}
+                      onChange={(e) => setRemarks(e.target.value)}
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <h3 className="font-semibold mb-2">Documents</h3>
+                  {Array.isArray(selectedApplication?.doc_paths) && selectedApplication.doc_paths.length > 0 ? (
+                    <ul>
+                      {selectedApplication.doc_paths.map((doc: string, index: number) => (
+                        <li key={index}>
+                          <a href={`https://pbvigsmmzasgbuqgwwdt.supabase.co/storage/v1/object/public/documents/${doc}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-500 hover:underline"
+                            download>
+                            {doc.split("/").pop()}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>                
+                  ) : (
+                    <span className="text-gray-400">No Documents Available</span>
+                  )}
+
+                </div>
               </div>
             </div>
             <DialogFooter className="flex justify-between">
-              {selectedApplication.status === "pending" && (
-                <>
-                  <Button
-                    variant="destructive"
-                    onClick={() => handleRejectApplication(selectedApplication.id)}
-                    disabled={processingAction}
-                  >
-                    {processingAction ? "Processing..." : "Reject Application"}
-                  </Button>
-                  <Button onClick={() => handleApproveApplication(selectedApplication.id)} disabled={processingAction}>
-                    {processingAction ? "Processing..." : "Approve Application"}
-                  </Button>
-                </>
-              )}
-              {selectedApplication.status !== "pending" && (
-                <Button onClick={() => setIsDialogOpen(false)}>Close</Button>
-              )}
+            {userRole === "banker" && selectedApplication.status === "accepted" && (
+              <>
+                <Button 
+                  onClick={() => handleRequestApplication(selectedApplication.id)} 
+                  disabled={!remarks.trim()}
+                >
+                  Requested
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => handleRejectApplication(selectedApplication.id)}
+                  disabled={processingAction}
+                >
+                  {processingAction ? "Processing..." : "Reject Application"}
+                </Button>
+                <Button onClick={() => handleApproveApplication(selectedApplication.id)} disabled={processingAction}>
+                  {processingAction ? "Processing..." : "Approve Application"}
+                </Button>
+              </>
+            )}
             </DialogFooter>
           </DialogContent>
         </Dialog>

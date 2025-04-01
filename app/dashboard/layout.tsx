@@ -11,7 +11,7 @@ import { MobileNav } from "@/components/dashboard/mobile-nav"
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<any>(null)
-  const [userRole, setUserRole] = useState<string | null>(null)
+  const [userRole, setUserRole] = useState<string | null>("user")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()

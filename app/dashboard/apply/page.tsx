@@ -1,87 +1,146 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
-import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Slider } from "@/components/ui/slider"
-import { toast } from "@/hooks/use-toast"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Textarea } from "@/components/ui/textarea"
+import { toast } from "@/components/ui/use-toast"
+import { FileUploader } from "@/components/file-uploader"
+import { v4 as uuidv4 } from "uuid"
 
 export default function ApplyLoanPage() {
-  const [loading, setLoading] = useState(false)
-  const [loanType, setLoanType] = useState("")
-  const [loanAmount, setLoanAmount] = useState(5000)
-  const [loanTerm, setLoanTerm] = useState(12)
   const router = useRouter()
   const supabase = createClientComponentClient()
+  const [banks, setBanks] = useState<Bank[]>([]);
+  const [selectedBanks, setSelectedBanks] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false)
+  const [files, setFiles] = useState<File[]>([])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  type Bank = {
+    id: string;
+    bank_name: string;
+    status: boolean;
+  };
+
+  useEffect(() => {
+    async function fetchBanks() {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase.from("banks").select("*").order("bank_name", { ascending: true });
+        if (error) throw error;
+        setBanks(data || []);
+      } catch (error) {
+        console.error("Error fetching banks:", error);
+        toast({ title: "Error", description: "Failed to load banks.", variant: "destructive" });
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchBanks();
+  }, []);
+  
+  const handleBankChange = (bank: string) => {
+    setSelectedBanks(prev => {
+      if (prev.includes(bank)) {
+        return prev.filter(b => b !== bank)
+      } else {
+        return [...prev, bank]
+      }
+    })
+  }
+
+  const handleFileChange = (newFiles: File[]) => {
+    setFiles(prev => [...prev, ...newFiles])
+  }
+
+  const removeFile = (index: number) => {
+    setFiles(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
     setLoading(true)
 
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
+      const formData = new FormData(event.currentTarget)
+      //const applicationId = uuidv4()
 
+      // Get user ID
+      const { data: { session } } = await supabase.auth.getSession()
+      
       if (!session) {
-        router.push("/login")
-        return
+        throw new Error("No session found")
       }
-
-      // Get form data
-      const formData = new FormData(e.target as HTMLFormElement)
-      const firstName = formData.get("firstName") as string
-      const lastName = formData.get("lastName") as string
-      const email = formData.get("email") as string
-      const phone = formData.get("phone") as string
-      const address = formData.get("address") as string
-      const employment = formData.get("employment") as string
-      const income = formData.get("income") as string
-      const purpose = formData.get("purpose") as string
-
-      // Insert loan application into database
-      const { data, error } = await supabase
-        .from("applications")
-        .insert([
-          {
-            user_id: session.user.id,
-            loan_type: loanType,
-            loan_amount: loanAmount,
-            loan_tenure: loanTerm,
-            full_name: `${firstName} ${lastName}`,
-            email: email,
-            phone_number: phone,
-            address_line1: address,
-            employment_type: employment,
-            monthly_income: income,
-            purpose: purpose,
-            status: "pending",
-          },
-        ])
-        .select()
-
-      if (error) {
-        throw error
+      
+      // Upload files to Supabase storage
+      const docPaths = []
+      
+      for (const file of files) {
+        const fileExt = file.name.split('.').pop()
+        const fileName = `${session?.user?.id}/${Date.now()}.${fileExt}`
+        
+        const { error: uploadError } = await supabase.storage
+          .from('documents')
+          .upload(fileName, file)
+          
+        if (uploadError) {
+          throw uploadError
+        }
+        
+        docPaths.push(fileName)
       }
-
+      
+      
+      // Create application entries for each selected bank
+      for (let i = 0; i < selectedBanks.length; i++) {
+        const bank = selectedBanks[i];
+        // Generate a new UUID for each application
+        const uniqueAppId = uuidv4();
+        
+        const { error } = await supabase.from('applications').insert({
+          id: uniqueAppId,
+          user_id: session.user.id,
+          full_name: formData.get('full_name') as string,
+          email: formData.get('email') as string,
+          mobile: formData.get('mobile') as string,
+          address: formData.get('address') as string,
+          postal_code: formData.get('postal_code') as string,
+          city: formData.get('city') as string,
+          loan_type: formData.get('loan_type') as string,
+          loan_amount: parseFloat(formData.get('loan_amount') as string),
+          loan_tenure: parseInt(formData.get('loan_tenure') as string),
+          purpose: formData.get('purpose') as string,
+          employment: formData.get('employment') as string,
+          income: parseFloat(formData.get('income') as string),
+          bank: bank,
+          status: 'pending',
+          doc_paths: docPaths,
+          created_at: new Date().toISOString()
+        })
+        
+        if (error) {
+          throw error;
+        }
+      }
+      
       toast({
         title: "Application Submitted",
         description: "Your loan application has been submitted successfully.",
       })
-
+      
       router.push("/dashboard/loans")
-    } catch (error: any) {
+    } catch (error) {
+      console.error("Error submitting application:", error)
       toast({
         title: "Error",
-        description: error.message || "An error occurred while submitting your application.",
+        description: "There was an error submitting your application. Please try again.",
         variant: "destructive",
       })
     } finally {
@@ -93,98 +152,75 @@ export default function ApplyLoanPage() {
     <div className="container mx-auto py-6">
       <h1 className="text-3xl font-bold mb-6">Apply for a Loan</h1>
       <Card>
-        <CardHeader>
-          <CardTitle>Loan Application Form</CardTitle>
-          <CardDescription>
-            Please fill out the form below to apply for a loan. All fields are required.
-          </CardDescription>
-        </CardHeader>
         <form onSubmit={handleSubmit}>
+          <CardHeader>
+            <CardTitle>Loan Application Form</CardTitle>
+          </CardHeader>
           <CardContent className="space-y-6">
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Personal Information</h3>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="full_name">Full Name</Label>
+                  <Input id="full_name" name="full_name" placeholder="Enter your full name" required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input id="email" name="email" type="email" placeholder="Enter your email" required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="mobile">Mobile Number</Label>
+                  <Input id="mobile" name="mobile" placeholder="Enter your mobile number" required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="ic_number">IC Number</Label>
+                  <Input id="ic_number" name="ic_number" placeholder="Enter your IC number" required />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="address">Address</Label>
+                  <Textarea id="address" name="address" placeholder="Enter your address" required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="postal_code">Postal Code</Label>
+                  <Input id="postal_code" name="postal_code" placeholder="Enter postal code" required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="city">City</Label>
+                  <Input id="city" name="city" placeholder="Enter city" required />
+                </div>
+              </div>
+            </div>
+
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Loan Details</h3>
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="loanType">Loan Type</Label>
-                  <Select value={loanType} onValueChange={setLoanType} required>
-                    <SelectTrigger id="loanType">
+                  <Label htmlFor="loan_type">Loan Type</Label>
+                  <Select name="loan_type" required>
+                    <SelectTrigger id="loan_type">
                       <SelectValue placeholder="Select loan type" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="personal">Personal Loan</SelectItem>
-                      <SelectItem value="auto">Auto Loan</SelectItem>
                       <SelectItem value="home">Home Loan</SelectItem>
+                      <SelectItem value="car">Car Loan</SelectItem>
                       <SelectItem value="education">Education Loan</SelectItem>
                       <SelectItem value="business">Business Loan</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor="loan_amount">Loan Amount (RM)</Label>
+                  <Input id="loan_amount" name="loan_amount" type="number" placeholder="Enter loan amount" required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="loan_tenure">Loan Tenure (months)</Label>
+                  <Input id="loan_tenure" name="loan_tenure" type="number" placeholder="Enter loan tenure" required />
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="purpose">Loan Purpose</Label>
-                  <Input id="purpose" name="purpose" placeholder="Purpose of the loan" required />
+                  <Textarea id="purpose" name="purpose" placeholder="Describe the purpose of your loan" required />
                 </div>
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="loanAmount">Loan Amount: RM {loanAmount.toLocaleString()}</Label>
-                </div>
-                <Slider
-                  id="loanAmount"
-                  min={1000}
-                  max={2000000}
-                  step={1000}
-                  value={[loanAmount]}
-                  onValueChange={(value) => setLoanAmount(value[0])}
-                />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>RM 1,000</span>
-                  <span>RM 2,000,000</span>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="loanTerm">Loan Term: {loanTerm} months</Label>
-                </div>
-                <Slider
-                  id="loanTerm"
-                  min={6}
-                  max={420}
-                  step={6}
-                  value={[loanTerm]}
-                  onValueChange={(value) => setLoanTerm(value[0])}
-                />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>6 months</span>
-                  <span>420 months</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">Personal Information</h3>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="firstName">First Name</Label>
-                  <Input id="firstName" name="firstName" placeholder="First name" required />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="lastName">Last Name</Label>
-                  <Input id="lastName" name="lastName" placeholder="Last name" required />
-                </div>
-              </div>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input id="email" name="email" type="email" placeholder="Email address" required />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <Input id="phone" name="phone" placeholder="Phone number" required />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="address">Address</Label>
-                <Textarea id="address" name="address" placeholder="Your current address" required />
               </div>
             </div>
 
@@ -213,27 +249,76 @@ export default function ApplyLoanPage() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="bank">Preferred Bank</Label>
-              <Select name="bank" required>
-                <SelectTrigger id="bank">
-                  <SelectValue placeholder="Select your preferred bank" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Maybank">Maybank</SelectItem>
-                  <SelectItem value="CIMB">CIMB</SelectItem>
-                  <SelectItem value="Public Bank">Public Bank</SelectItem>
-                  <SelectItem value="RHB">RHB</SelectItem>
-                  <SelectItem value="Hong Leong Bank">Hong Leong Bank</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Preferred Banks</h3>
+              {loading ? (
+                <div className="h-10 flex items-center">Loading banks...</div>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2">
+                  {banks.length === 0 ? (
+                    <p className="text-gray-500">No banks available.</p>
+                  ) : (
+                    banks.map((bank) => (
+                      <div key={bank.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={bank.id}
+                          checked={selectedBanks.includes(bank.bank_name)}
+                          onCheckedChange={() => handleBankChange(bank.bank_name)}
+                        />
+                        <Label htmlFor={bank.id}>{bank.bank_name}</Label>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+
+              {selectedBanks.length === 0 && !loading && (
+                <p className="text-sm text-red-500">Please select at least one bank</p>
+              )}
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Supporting Documents</h3>
+              <div className="space-y-2">
+                <Label>Upload Documents (PDF, JPG, PNG)</Label>
+                <FileUploader 
+                  onFilesSelected={handleFileChange}
+                  acceptedFileTypes={['.pdf', '.jpg', '.jpeg', '.png']}
+                  maxFileSizeMB={10}
+                  multiple={true}
+                />
+                
+                {files.length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    <p className="text-sm font-medium">Selected Files:</p>
+                    <ul className="space-y-1">
+                      {files.map((file, index) => (
+                        <li key={index} className="flex items-center justify-between text-sm">
+                          <span>{file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+                          <Button 
+                            type="button" 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => removeFile(index)}
+                          >
+                            Remove
+                          </Button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
             </div>
           </CardContent>
           <CardFooter className="flex justify-between">
             <Button variant="outline" type="button" onClick={() => router.back()}>
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button 
+              type="submit" 
+              disabled={loading || selectedBanks.length === 0}
+            >
               {loading ? "Submitting..." : "Submit Application"}
             </Button>
           </CardFooter>

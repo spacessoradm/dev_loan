@@ -16,7 +16,7 @@ import { isSupabaseReachable } from "@/lib/supabase"
 import { AlertCircle } from "lucide-react"
 
 export default function RegisterPage() {
-  const [firstName, setFirstName] = useState("")
+  const [fullName, setFullName] = useState("")
   const [lastName, setLastName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -73,8 +73,8 @@ export default function RegisterPage() {
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback`,
           data: {
-            first_name: firstName,
-            last_name: lastName,
+            full_name: fullName,
+            last_name: '',
           },
         },
       })
@@ -101,8 +101,8 @@ export default function RegisterPage() {
         try {
           const { error: profileError } = await supabase.from("profiles").upsert({
             id: authData.user.id,
-            first_name: firstName,
-            last_name: lastName,
+            full_name: fullName,
+            last_name: '',
             updated_at: new Date().toISOString(),
           })
 
@@ -173,30 +173,17 @@ export default function RegisterPage() {
 
             {error && <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">{error}</div>}
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">First Name</Label>
+            <div className="space-y-2">
+                <Label htmlFor="fullName">Full Name</Label>
                 <Input
-                  id="firstName"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  placeholder="First name"
+                  id="fullName"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="Full name"
                   required
                   className="bg-white/90"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name</Label>
-                <Input
-                  id="lastName"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  placeholder="Last name"
-                  required
-                  className="bg-white/90"
-                />
-              </div>
-            </div>
 
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>

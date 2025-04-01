@@ -18,6 +18,8 @@ interface SidebarProps {
 }
 
 export function Sidebar({ role }: SidebarProps) {
+  console.log("Sidebar rendered with role:", role)
+  
   const pathname = usePathname()
 
   // Define navigation items based on user role
@@ -49,7 +51,19 @@ export function Sidebar({ role }: SidebarProps) {
     },
     {
       title: "Manage Users",
-      href: "/dashboard/admin/users",
+      href: "/dashboard/users",
+      icon: Users,
+      roles: ["admin"]
+    },
+    {
+      title: "Manage Bankers",
+      href: "/dashboard/bankers",
+      icon: Users,
+      roles: ["admin"]
+    },
+    {
+      title: "Manage Bank List",
+      href: "/dashboard/banks",
       icon: Users,
       roles: ["admin"]
     },
@@ -78,8 +92,9 @@ export function Sidebar({ role }: SidebarProps) {
     !item.roles || item.roles.includes(role || "user")
   )
 
+  // Remove the 'hidden' class to make it visible on all screen sizes
   return (
-    <div className="hidden border-r bg-gray-100/40 md:block dark:bg-gray-800/40">
+    <div className="border-r bg-gray-100/40 md:block dark:bg-gray-800/40 w-64">
       <div className="flex h-full max-h-screen flex-col gap-2">
         <div className="flex-1 overflow-auto py-2">
           <nav className="grid items-start px-2 text-sm font-medium">

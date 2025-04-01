@@ -8,7 +8,7 @@ const raleway = Raleway({
 })
 
 export const metadata: Metadata = {
-  title: 'Loan App',
+  title: 'SpeedX Loan',
   description: 'Created with CEY',
   generator: 'visual studio',
 }

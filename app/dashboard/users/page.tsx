@@ -25,8 +25,9 @@ export default function AdminUsersPage() {
       try {
         setLoading(true)
         const { data, error } = await supabase
-          .from('profiles')
+          .from('Profiles')
           .select('*')
+          .eq('role', 'user')
           .order('created_at', { ascending: false })
 
         if (error) throw error
@@ -76,7 +77,7 @@ export default function AdminUsersPage() {
                   <tbody>
                     {users.map((user: any) => (
                       <tr key={user.id} className="border-b">
-                        <td className="p-2">{user.full_name || 'N/A'}</td>
+                        <td className="p-2">{user.f_name || 'N/A'} {user.l_name || 'N/A'}</td>
                         <td className="p-2">{user.email}</td>
                         <td className="p-2">{user.role}</td>
                         <td className="p-2">

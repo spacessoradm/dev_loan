@@ -49,7 +49,6 @@ export default function LoginPage() {
     setError(null)
 
     try {
-      console.log("Attempting login with:", email)
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -60,8 +59,6 @@ export default function LoginPage() {
       }
 
       if (data.session) {
-        console.log("Login successful, redirecting to dashboard")
-        console.log("session", data.session.user.id)
 
         // Check if user has a profile
         const { data: profile, error: profileError } = await supabase
@@ -69,12 +66,8 @@ export default function LoginPage() {
           .select("*")
           .eq("user_id", String(data.session.user.id))
         
-        console.log("Profile:", profile);
-
-
         // If no profile exists, create one
         if (profileError && profileError.code === "PGRST116") {
-          console.log("No profile found, creating one...")
           await supabase.from("Profiles").insert({
             user_id: data.session.user.id,
             email: data.session.user.email,
@@ -87,7 +80,6 @@ export default function LoginPage() {
         router.push("/dashboard")
       }
     } catch (error: any) {
-      console.error("Login error:", error)
       setError(error.message || "An error occurred during login")
     } finally {
       setLoading(false)
