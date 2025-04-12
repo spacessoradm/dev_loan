@@ -18,7 +18,6 @@ interface SidebarProps {
 }
 
 export function Sidebar({ role }: SidebarProps) {
-  console.log("Sidebar rendered with role:", role)
   
   const pathname = usePathname()
 
@@ -47,7 +46,13 @@ export function Sidebar({ role }: SidebarProps) {
       title: "Applications",
       href: "/dashboard/applications",
       icon: FileText,
-      roles: ["banker", "admin"]
+      roles: ["admin"]
+    },
+    {
+      title: "Applications",
+      href: "/dashboard/subapplications",
+      icon: FileText,
+      roles: ["banker"]
     },
     {
       title: "Manage Users",
