@@ -249,7 +249,7 @@ export default function Home() {
             </div>
 
             {/* Feature 3 */}
-            <div className="group p-8 rounded-2xl bg-white border border-gray-100 hover:border-[#1e4388]/20 transition-all duration-300 hover:shadow-2xl">
+            {/* <div className="group p-8 rounded-2xl bg-white border border-gray-100 hover:border-[#1e4388]/20 transition-all duration-300 hover:shadow-2xl">
               <div className="mb-6">
                 <div className="w-14 h-14 bg-[#1e4388]/10 rounded-xl flex items-center justify-center group-hover:bg-[#1e4388] transition-colors duration-300">
                   <svg
@@ -268,7 +268,7 @@ export default function Home() {
               <p className="text-gray-600 leading-relaxed">
                 Get your loan approved quickly with our streamlined application process.
               </p>
-            </div>
+            </div> */}
           </div>
         </div>
       </section>

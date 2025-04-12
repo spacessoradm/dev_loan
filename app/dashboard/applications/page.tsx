@@ -5,6 +5,7 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import CheckboxMultiSelect from "@/components/checkbox-multi-select";
 import { Badge } from "@/components/ui/badge"
 import {
   Dialog,
@@ -27,6 +28,8 @@ export default function ApplicationsPage() {
   const [remarks, setRemarks] = useState<string>("")
   const supabase = createClientComponentClient()
   const [bankers, setBankers] = useState<any[]>([]);
+  const [assignedBankers, setAssignedBankers] = useState<string[]>([]);
+
 
   const BASE_STORAGE_URL = "https://pbvigsmmzasgbuqgwwdt.supabase.co/storage/v1/object/public/documents/";
 
@@ -72,10 +75,6 @@ export default function ApplicationsPage() {
         // Fetch applications based on role
         let applicationsQuery = supabase.from("applications").select("*").order("created_at", { ascending: false });
 
-        if (userData.role === "banker") {
-          applicationsQuery = applicationsQuery.eq("assigned_to", userData?.id);
-        }
-
         const { data, error } = await applicationsQuery;
         if (error) throw error;
 
@@ -94,23 +93,93 @@ export default function ApplicationsPage() {
     fetchData();
   }, []);
 
-  const handleAssignBanker = async (applicationId: string, bankerId: string) => {
+  const handleAssignBanker = async (applicationId: string, bankerIds: string[]) => {
+    setProcessingAction(true);
+  
+    const stringBankerIds = bankerIds.map(String);
+    console.log("Banker IDs:", stringBankerIds);
+  
     try {
-      const { error } = await supabase.from("applications").update({ assigned_to: bankerId }).eq("id", applicationId);
-      if (error) throw error;
+      // 1. Update the main applications table
+      const { error: updateError } = await supabase
+        .from("applications")
+        .update({ 
+          assigned_to: stringBankerIds 
+        })
+        .eq("id", applicationId);
   
-      setApplications(applications.map((app) => (app.id === applicationId ? { ...app, assigned_to: bankerId } : app)));
+      if (updateError) {
+        console.error("Error updating application:", updateError);
+        throw updateError;
+      }
   
+      // 2. Create individual sub_applications records
+      const inserts = stringBankerIds.map(bankerId => ({
+        application_id: applicationId,
+        status: 'assigned',
+        assigned_to: bankerId,
+        assigned_at: new Date().toISOString(),
+      }));
+  
+      const { error: insertError } = await supabase
+        .from("sub_applications")
+        .insert(inserts);
+  
+      if (insertError) {
+        console.error("Error inserting sub_applications:", insertError);
+        throw insertError;
+      }
+  
+      // 3. Update local state
+      setApplications(applications.map(app => 
+        app.id === applicationId ? { ...app, assigned_to: bankerIds } : app
+      ));
+  
+      // 4. Show success toast
       toast({
-        title: "Banker Assigned",
+        title: "Banker(s) Assigned",
         description: "The application has been assigned successfully",
       });
+  
+      // 5. Close dialog
+      setIsDialogOpen(false);
+  
     } catch (error: any) {
+      console.error("Assignment error:", error);
       toast({
         title: "Error",
-        description: "Failed to assign banker",
+        description: error.message || "Failed to assign bankers",
         variant: "destructive",
       });
+    } finally {
+      setProcessingAction(false);
+    }
+  };
+  
+
+  const handleViewApplication = async (application: any) => {
+    setSelectedApplication(application);
+
+    if(application.assigned_to != null && application.assigned_to != ""){
+      // Parse the stringified array into an actual array
+      let assignedBankersArray = [];
+
+      try {
+          assignedBankersArray = JSON.parse(application.assigned_to);
+      } catch (error) {
+          console.error("Error parsing assigned_to:", error);
+          assignedBankersArray = []; // Fallback to an empty array if parsing fails
+      }
+
+      setAssignedBankers(assignedBankersArray);
+    }
+
+    
+    setIsDialogOpen(true);
+  
+    if (application.doc_paths) {
+      const docUrls = await getDocumentUrls(application.doc_paths);
+      setSelectedApplication((prev: any) => ({ ...prev, docUrls }));
     }
   };
 
@@ -138,18 +207,6 @@ export default function ApplicationsPage() {
     }
   };
   
-  
-  const handleViewApplication = async (application: any) => {
-    setSelectedApplication(application);
-    setIsDialogOpen(true);
-  
-    if (application.doc_paths) {
-      const docUrls = await getDocumentUrls(application.doc_paths);
-      setSelectedApplication((prev: any) => ({ ...prev, docUrls }));
-    }
-  };
-  
-
   const handleAcceptApplication = async (applicationId: string) => {
     if (userRole !== "banker") return; // Ensure only bankers can accept
   
@@ -410,7 +467,6 @@ export default function ApplicationsPage() {
                   <TableHead>Term</TableHead>
                   <TableHead>Date Applied</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Banker</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -425,28 +481,6 @@ export default function ApplicationsPage() {
                     <TableCell>{application.loan_term} months</TableCell>
                     <TableCell>{formatDate(application.created_at)}</TableCell>
                     <TableCell>{getStatusBadge(application.status)}</TableCell>
-                    <TableCell>
-                      {userRole === "admin" ? (
-                        <select
-                          className="border rounded px-2 py-1"
-                          value={application.assigned_to || ""}
-                          onChange={(e) => handleAssignBanker(application.id, e.target.value)}
-                        >
-                          <option value="">Unassigned</option>
-                          {bankers
-                            .filter((banker) => banker.bank_name === application.bank) // ✅ Filter by bank_name
-                            .map((banker) => (
-                              <option key={banker.id} value={banker.id}>
-                                {banker.full_name}
-                              </option>
-                            ))}
-                        </select>
-                      ) : (
-                        <span>
-                          {bankers.find((b) => b.id === application.assigned_to)?.full_name || "Unassigned"}
-                        </span>
-                      )}
-                    </TableCell>
                     <TableCell>
                       <Button variant="ghost" size="icon" onClick={() => handleViewApplication(application)}>
                         <Eye className="h-4 w-4" />
@@ -477,99 +511,121 @@ export default function ApplicationsPage() {
 
       {selectedApplication && (
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="max-w-3xl">
+          <DialogContent className="max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
             <DialogHeader>
-              <DialogTitle>Loan Application Details - ({selectedApplication.bank})</DialogTitle>
+              <DialogTitle>Loan Application Details</DialogTitle>
               <DialogDescription>Review the application details before making a decision</DialogDescription>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h3 className="font-semibold mb-2">Applicant Information</h3>
-                  <p>
-                    <span className="text-muted-foreground">Name:</span> {selectedApplication.full_name}{" "}
-                    {selectedApplication.last_name}
-                  </p>
-                  <p>
-                    <span className="text-muted-foreground">Email:</span> {selectedApplication.email}
-                  </p>
-                  <p>
-                    <span className="text-muted-foreground">Phone:</span> {selectedApplication.mobile}
-                  </p>
-                  <p>
-                    <span className="text-muted-foreground">Address:</span> {selectedApplication.address}
-                  </p>
-                </div>
-
-                <div>
-                  <h3 className="font-semibold mb-2">Loan Details</h3>
-                  <p>
-                    <span className="text-muted-foreground">Loan Type:</span> {selectedApplication.loan_type}
-                  </p>
-                  <p>
-                    <span className="text-muted-foreground">Amount:</span>{" "}
-                    {formatCurrency(selectedApplication.loan_amount)}
-                  </p>
-                  <p>
-                    <span className="text-muted-foreground">Term:</span> {selectedApplication.loan_term} months
-                  </p>
-                  <p>
-                    <span className="text-muted-foreground">Purpose:</span> {selectedApplication.purpose}
-                  </p>
-                </div>
-
-                <div>
-                  <h3 className="font-semibold mb-2">Financial Information</h3>
-                  <p>
-                    <span className="text-muted-foreground">Employment Status:</span>{" "}
-                    {selectedApplication.employment}
-                  </p>
-                  <p>
-                    <span className="text-muted-foreground">Annual Income:</span> {selectedApplication.income}
-                  </p>
-                </div>
-
-                <div>
-                  <h3 className="font-semibold mb-2">Application Status</h3>
-                  <p>
-                    <span className="text-muted-foreground">Status:</span> {getStatusBadge(selectedApplication.status)}
-                  </p>
-                  <p>
-                    <span className="text-muted-foreground">Date Applied:</span>{" "}
-                    {formatDate(selectedApplication.created_at)}
-                  </p>
-                </div>
-
-                {userRole === "banker" && selectedApplication.status === "accepted" && (
+            <div className="overflow-y-auto pr-2 flex-grow">
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <textarea 
-                      placeholder="Leave a remark for this request..."
-                      value={remarks}
-                      onChange={(e) => setRemarks(e.target.value)}
-                    />
+                    <h3 className="font-semibold mb-2">Applicant Information</h3>
+                    <p>
+                      <span className="text-muted-foreground">Name:</span> {selectedApplication.full_name}{" "}
+                      {selectedApplication.last_name}
+                    </p>
+                    <p>
+                      <span className="text-muted-foreground">Email:</span> {selectedApplication.email}
+                    </p>
+                    <p>
+                      <span className="text-muted-foreground">Phone:</span> {selectedApplication.mobile}
+                    </p>
+                    <p>
+                      <span className="text-muted-foreground">Address:</span> {selectedApplication.address}
+                    </p>
                   </div>
-                )}
 
-                <div>
-                  <h3 className="font-semibold mb-2">Documents</h3>
-                  {Array.isArray(selectedApplication?.doc_paths) && selectedApplication.doc_paths.length > 0 ? (
-                    <ul>
-                      {selectedApplication.doc_paths.map((doc: string, index: number) => (
-                        <li key={index}>
-                          <a href={`https://pbvigsmmzasgbuqgwwdt.supabase.co/storage/v1/object/public/documents/${doc}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-500 hover:underline"
-                            download>
-                            {doc.split("/").pop()}
-                          </a>
-                        </li>
-                      ))}
-                    </ul>                
-                  ) : (
-                    <span className="text-gray-400">No Documents Available</span>
+                  <div style={{ display: 'none' }}>
+                    <h3 className="font-semibold mb-2">Loan Details</h3>
+                    <p>
+                      <span className="text-muted-foreground">Loan Type:</span> {selectedApplication.loan_type}
+                    </p>
+                    <p>
+                      <span className="text-muted-foreground">Amount:</span>{" "}
+                      {formatCurrency(selectedApplication.loan_amount)}
+                    </p>
+                    <p>
+                      <span className="text-muted-foreground">Term:</span> {selectedApplication.loan_term} months
+                    </p>
+                    <p>
+                      <span className="text-muted-foreground">Purpose:</span> {selectedApplication.purpose}
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className="font-semibold mb-2">Financial Information</h3>
+                    <p>
+                      <span className="text-muted-foreground">Employment Status:</span>{" "}
+                      {selectedApplication.employment}
+                    </p>
+                    <p>
+                      <span className="text-muted-foreground">Workplace:</span> {selectedApplication.workplace}
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className="font-semibold mb-2">Application Status</h3>
+                    <p>
+                      <span className="text-muted-foreground">Status:</span> {getStatusBadge(selectedApplication.status)}
+                    </p>
+                    <p>
+                      <span className="text-muted-foreground">Date Applied:</span>{" "}
+                      {formatDate(selectedApplication.created_at)}
+                    </p>
+                  </div>
+
+                  {userRole === "banker" && selectedApplication.status === "accepted" && (
+                    <div>
+                      <textarea 
+                        placeholder="Leave a remark for this request..."
+                        value={remarks}
+                        onChange={(e) => setRemarks(e.target.value)}
+                      />
+                    </div>
                   )}
 
+                  {/* Assignment Section (for bankers only) */}
+                  {userRole === "admin" && (
+                    <div className="col-span-2"> {/* Make this take the full width */}
+                      <h3 className="font-semibold mb-2">Assign to Bankers</h3>
+                      <CheckboxMultiSelect
+                        options={bankers}
+                        selectedValues={assignedBankers}
+                        onChange={setAssignedBankers}
+                        maxHeight="200px"
+                      />
+                      <Button
+                        className="mt-2"
+                        onClick={() => handleAssignBanker(selectedApplication.id, assignedBankers)}
+                        disabled={assignedBankers.length === 0 || processingAction}
+                      >
+                        {processingAction ? 'Assigning...' : 'Assign'}
+                      </Button>
+                    </div>
+                  )}
+
+                  <div>
+                    <h3 className="font-semibold mb-2">Documents</h3>
+                    {Array.isArray(selectedApplication?.doc_paths) && selectedApplication.doc_paths.length > 0 ? (
+                      <ul>
+                        {selectedApplication.doc_paths.map((doc: string, index: number) => (
+                          <li key={index}>
+                            <a href={`https://pbvigsmmzasgbuqgwwdt.supabase.co/storage/v1/object/public/documents/${doc}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-500 hover:underline"
+                              download>
+                              {doc.split("/").pop()}
+                            </a>
+                          </li>
+                        ))}
+                      </ul>                
+                    ) : (
+                      <span className="text-gray-400">No Documents Available</span>
+                    )}
+
+                  </div>
                 </div>
               </div>
             </div>

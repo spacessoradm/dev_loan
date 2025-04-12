@@ -30,6 +30,7 @@ type Application = {
   mobile?: string
   address?: string
   employment?: string
+  workplace?: string
   income?: number
   bank?: string
   doc_paths?: string[]
@@ -294,21 +295,9 @@ export default function LoansPage() {
             <CardContent>
               <dl className="space-y-2">
                 <div className="flex justify-between">
-                  <dt className="text-sm text-gray-500">Amount:</dt>
+                  <dt className="text-sm text-gray-500">Preferred Bank:</dt>
                   <dd className="text-sm font-medium">
-                    {formatCurrency(application.loan_amount)}
-                  </dd>
-                </div>
-                <div className="flex justify-between">
-                  <dt className="text-sm text-gray-500">Term:</dt>
-                  <dd className="text-sm font-medium">
-                    {application.loan_tenure} months
-                  </dd>
-                </div>
-                <div className="flex justify-between">
-                  <dt className="text-sm text-gray-500">Purpose:</dt>
-                  <dd className="text-sm font-medium">
-                    {application.purpose}
+                    {application.bank ? application.bank : "Not Preferred"}
                   </dd>
                 </div>
                 <div className="flex justify-between">
@@ -394,7 +383,7 @@ export default function LoansPage() {
               <Separator />
               
               {/* Loan Details */}
-              <div>
+              <div style={{ display: 'none' }}>
                 <h3 className="text-lg font-semibold mb-3">Loan Details</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -431,6 +420,10 @@ export default function LoansPage() {
                     <p className="font-medium capitalize">{selectedApplication.employment || 'N/A'}</p>
                   </div>
                   <div>
+                    <p className="text-sm text-gray-500">Workplace</p>
+                    <p className="font-medium capitalize">{selectedApplication.workplace || 'N/A'}</p>
+                  </div>
+                  <div style={{ display: 'none' }}>
                     <p className="text-sm text-gray-500">Monthly Income</p>
                     <p className="font-medium">{selectedApplication.income ? formatCurrency(selectedApplication.income) : 'N/A'}</p>
                   </div>

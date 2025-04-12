@@ -21,6 +21,8 @@ export default function ApplyLoanPage() {
   const [selectedBanks, setSelectedBanks] = useState<string[]>([]);
   const [loading, setLoading] = useState(false)
   const [files, setFiles] = useState<File[]>([])
+  const [employmentStatus, setEmploymentStatus] = useState("")
+  const [workplace, setWorkplace] = useState("")
 
   type Bank = {
     id: string;
@@ -64,6 +66,83 @@ export default function ApplyLoanPage() {
     setFiles(prev => prev.filter((_, i) => i !== index))
   }
 
+  const handleEmploymentChange = (value: string) => {
+    setEmploymentStatus(value);
+  }
+
+  const handleWorkplaceChange = (value: string) => {
+    setWorkplace(value);
+  }
+
+  const renderDocumentRequirements = () => {
+    if (!employmentStatus || !workplace) return null;
+
+    if (employmentStatus === "employed" && workplace === "malaysia") {
+      return (
+        <div className="mt-4 p-4 bg-gray-50 rounded-md border">
+          <h4 className="font-medium mb-2">Documents Required (For Private Employee):</h4>
+          <ol className="list-decimal pl-5 space-y-1">
+            <li>IC</li>
+            <li>Latest 3 month payslip</li>
+            <li>EPF statement 2024 & 2025</li>
+            <li>EA Form 2023 & 2024</li>
+            <li>Borang BE 2023/2024</li>
+            <li>Latest 3 months bank statement that match your salary payment</li>
+            <li>Other personal saving/FD/shares/unit trust/ASNB (Whichever applicable)</li>
+          </ol>
+        </div>
+      );
+    } else if (employmentStatus === "self-employed" && workplace === "malaysia") {
+      return (
+        <div className="mt-4 p-4 bg-gray-50 rounded-md border">
+          <h4 className="font-medium mb-2">Documents Required (For Business Owner):</h4>
+          <ol className="list-decimal pl-5 space-y-1">
+            <li>IC</li>
+            <li>Borang B 2023 & 2024 (latest 2 year)</li>
+            <li>Tax receipt 2023 & 2024 (latest 2 year)</li>
+            <li>E lejar</li>
+            <li>SSM</li>
+            <li>Latest 6 months Biz current account</li>
+            <li>Savings account, FD, Unit Trust, Shares, amamah saham, etc.</li>
+          </ol>
+        </div>
+      );
+    } else if (employmentStatus === "employed" && workplace === "singapore") {
+      return (
+        <div className="mt-4 p-4 bg-gray-50 rounded-md border">
+          <h4 className="font-medium mb-2">Documents Required:</h4>
+          <ol className="list-decimal pl-5 space-y-1">
+            <li>Malaysia IC front back</li>
+            <li>PR ID front back / working visa</li>
+            <li>6 months latest payslips</li>
+            <li>6 months latest bank statement</li>
+            <li>Credit bureau report (Latest Date)</li>
+            <li>2 years latest Income Tax statement</li>
+            <li>Employment Verification letter</li>
+            <li>Any Saving /FD /Investment</li>
+          </ol>
+        </div>
+      );
+    } else if (employmentStatus === "self-employed" && workplace === "singapore") {
+      return (
+        <div className="mt-4 p-4 bg-gray-50 rounded-md border">
+          <h4 className="font-medium mb-2">Documents Required (For Business Owner):</h4>
+          <ol className="list-decimal pl-5 space-y-1">
+            <li>Passport</li>
+            <li>Singapore ID front back</li>
+            <li>SG Income Tax NOA 2023, 2024</li>
+            <li>6 months latest company bank statements</li>
+            <li>ACRA/Company profile</li>
+            <li>Latest audit report/management account for 2 years latest</li>
+            <li>Any Saving /FD /Investment</li>
+          </ol>
+        </div>
+      );
+    }
+    
+    return null;
+  };
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setLoading(true)
@@ -98,36 +177,33 @@ export default function ApplyLoanPage() {
       }
       
       
-      // Create application entries for each selected bank
-      for (let i = 0; i < selectedBanks.length; i++) {
-        const bank = selectedBanks[i];
-        // Generate a new UUID for each application
-        const uniqueAppId = uuidv4();
+      // Generate a new UUID for each application
+      const uniqueAppId = uuidv4();
         
-        const { error } = await supabase.from('applications').insert({
-          id: uniqueAppId,
-          user_id: session.user.id,
-          full_name: formData.get('full_name') as string,
-          email: formData.get('email') as string,
-          mobile: formData.get('mobile') as string,
-          address: formData.get('address') as string,
-          postal_code: formData.get('postal_code') as string,
-          city: formData.get('city') as string,
-          loan_type: formData.get('loan_type') as string,
-          loan_amount: parseFloat(formData.get('loan_amount') as string),
-          loan_tenure: parseInt(formData.get('loan_tenure') as string),
-          purpose: formData.get('purpose') as string,
-          employment: formData.get('employment') as string,
-          income: parseFloat(formData.get('income') as string),
-          bank: bank,
-          status: 'pending',
-          doc_paths: docPaths,
-          created_at: new Date().toISOString()
-        })
-        
-        if (error) {
-          throw error;
-        }
+      const { error } = await supabase.from('applications').insert({
+        id: uniqueAppId,
+        user_id: session.user.id,
+        full_name: formData.get('full_name') as string,
+        email: formData.get('email') as string,
+        mobile: formData.get('mobile') as string,
+        address: formData.get('address') as string,
+        postal_code: formData.get('postal_code') as string,
+        city: formData.get('city') as string,
+        loan_type: 'home',
+        loan_amount: 0,
+        loan_tenure: 0,
+        purpose: '',
+        employment: formData.get('employment') as string,
+        workplace: formData.get('workplace') as string,
+        income: 0,
+        bank: formData.get('bank') as string,
+        status: 'pending',
+        doc_paths: docPaths,
+        created_at: new Date().toISOString()
+      })
+      
+      if (error) {
+        throw error;
       }
       
       toast({
@@ -191,12 +267,12 @@ export default function ApplyLoanPage() {
               </div>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-4" style={{ display: 'none' }}>
               <h3 className="text-lg font-medium">Loan Details</h3>
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="loan_type">Loan Type</Label>
-                  <Select name="loan_type" required>
+                  <Select name="loan_type">
                     <SelectTrigger id="loan_type">
                       <SelectValue placeholder="Select loan type" />
                     </SelectTrigger>
@@ -211,15 +287,15 @@ export default function ApplyLoanPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="loan_amount">Loan Amount (RM)</Label>
-                  <Input id="loan_amount" name="loan_amount" type="number" placeholder="Enter loan amount" required />
+                  <Input id="loan_amount" name="loan_amount" type="number" placeholder="Enter loan amount" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="loan_tenure">Loan Tenure (months)</Label>
-                  <Input id="loan_tenure" name="loan_tenure" type="number" placeholder="Enter loan tenure" required />
+                  <Input id="loan_tenure" name="loan_tenure" type="number" placeholder="Enter loan tenure" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="purpose">Loan Purpose</Label>
-                  <Textarea id="purpose" name="purpose" placeholder="Describe the purpose of your loan" required />
+                  <Textarea id="purpose" name="purpose" placeholder="Describe the purpose of your loan" />
                 </div>
               </div>
             </div>
@@ -229,13 +305,12 @@ export default function ApplyLoanPage() {
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="employment">Employment Status</Label>
-                  <Select name="employment" required>
+                  <Select name="employment" required onValueChange={handleEmploymentChange}>
                     <SelectTrigger id="employment">
                       <SelectValue placeholder="Select employment status" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="full-time">Full-time</SelectItem>
-                      <SelectItem value="part-time">Part-time</SelectItem>
+                      <SelectItem value="employed">Employed</SelectItem>
                       <SelectItem value="self-employed">Self-employed</SelectItem>
                       <SelectItem value="unemployed">Unemployed</SelectItem>
                       <SelectItem value="retired">Retired</SelectItem>
@@ -243,13 +318,27 @@ export default function ApplyLoanPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="income">Monthly Income</Label>
-                  <Input id="income" name="income" placeholder="Monthly income" required />
+                  <Label htmlFor="workplace">Workplace</Label>
+                  <Select name="workplace" required onValueChange={handleWorkplaceChange}>
+                    <SelectTrigger id="workplace">
+                      <SelectValue placeholder="Select workplace" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="malaysia">Malaysia</SelectItem>
+                      <SelectItem value="singapore">Singapore</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
+                <div className="space-y-2" style={{ display: 'none' }}>
+                  <Label htmlFor="income">Monthly Income</Label>
+                  <Input id="income" name="income" placeholder="Monthly income" />
+                </div>
+                {renderDocumentRequirements()}
               </div>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-4" style={{ display: 'none' }}>
               <h3 className="text-lg font-medium">Preferred Banks</h3>
               {loading ? (
                 <div className="h-10 flex items-center">Loading banks...</div>
@@ -275,6 +364,11 @@ export default function ApplyLoanPage() {
               {selectedBanks.length === 0 && !loading && (
                 <p className="text-sm text-red-500">Please select at least one bank</p>
               )}
+            </div>
+
+            <div className="space-y-2">
+                  <Label htmlFor="bank">Preferred Bank</Label>
+                  <Input id="bank" name="bank" placeholder="Preferred Bank" />
             </div>
 
             <div className="space-y-4">
@@ -317,7 +411,7 @@ export default function ApplyLoanPage() {
             </Button>
             <Button 
               type="submit" 
-              disabled={loading || selectedBanks.length === 0}
+              disabled={loading}
             >
               {loading ? "Submitting..." : "Submit Application"}
             </Button>

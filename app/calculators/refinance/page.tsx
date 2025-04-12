@@ -140,17 +140,14 @@ export default function RefinanceCalculator() {
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="currentLoanAmount">Outstanding Loan Amount</Label>
-                    <div className="relative">
-                      <Input
+                    <Input
                         id="currentLoanAmount"
                         type="number"
                         placeholder="Enter current loan amount"
-                        className="pl-8 transition-all duration-300 hover:border-[#1e4388]/50 focus:border-[#1e4388]"
+                        className="transition-all duration-300 hover:border-[#1e4388]/50 focus:border-[#1e4388]"
                         value={existingLoanAmount}
                         onChange={(e) => setExistingLoanAmount(e.target.value)}
                       />
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">RM</span>
-                    </div>
                   </div>
 
                   <div className="space-y-2">
@@ -214,11 +211,10 @@ export default function RefinanceCalculator() {
                         id="refinanceCosts"
                         type="number"
                         placeholder="Enter refinancing costs"
-                        className="pl-8 transition-all duration-300 hover:border-[#1e4388]/50 focus:border-[#1e4388]"
+                        className="transition-all duration-300 hover:border-[#1e4388]/50 focus:border-[#1e4388]"
                         value={closingCosts}
                         onChange={(e) => setClosingCosts(e.target.value)}
                       />
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">RM</span>
                     </div>
                   </div>
                 </div>

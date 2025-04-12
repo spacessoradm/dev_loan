@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { Raleway } from "next/font/google"
+import { WhatsAppButton } from '@/components/whatsapp-button'
+import { ThemeProvider } from 'next-themes'
 
 const raleway = Raleway({ 
   subsets: ['latin'],
@@ -21,7 +23,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${raleway.variable} font-raleway`}>
-        {children}
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+          {children}
+          <WhatsAppButton
+            phoneNumber="60123456789"
+            message="Hello! I'm interested in learning more about your loan services."
+          />
+        </ThemeProvider>
       </body>
     </html>
   )

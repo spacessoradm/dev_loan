@@ -249,7 +249,6 @@ export default function LoanCalculator() {
                         value={loanAmount}
                         onChange={(e) => setLoanAmount(e.target.value)}
                       />
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">RM</span>
                     </div>
                   </div>
 
@@ -264,7 +263,6 @@ export default function LoanCalculator() {
                         value={interestRate}
                         onChange={(e) => setInterestRate(e.target.value)}
                       />
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">%</span>
                     </div>
                   </div>
 
@@ -279,7 +277,6 @@ export default function LoanCalculator() {
                         value={loanTermYears}
                         onChange={(e) => setLoanTermYears(e.target.value)}
                       />
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">Years</span>
                     </div>
                   </div>
 
@@ -294,7 +291,6 @@ export default function LoanCalculator() {
                         value={loanTermMonths}
                         onChange={(e) => setLoanTermMonths(e.target.value)}
                       />
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">Months</span>
                     </div>
                   </div>
 
@@ -309,82 +305,7 @@ export default function LoanCalculator() {
                         value={extraPayment}
                         onChange={(e) => setExtraPayment(e.target.value)}
                       />
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">RM</span>
                     </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="propertyTax">Property Tax</Label>
-                    <div className="relative">
-                      <Input
-                        id="propertyTax"
-                        type="number"
-                        placeholder="Enter property tax"
-                        className="pl-8 transition-all duration-300 hover:border-[#1e4388]/50 focus:border-[#1e4388]"
-                        value={propertyTax}
-                        onChange={(e) => setPropertyTax(e.target.value)}
-                      />
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">per year</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="insurance">Insurance</Label>
-                    <div className="relative">
-                      <Input
-                        id="insurance"
-                        type="number"
-                        placeholder="Enter insurance"
-                        className="pl-8 transition-all duration-300 hover:border-[#1e4388]/50 focus:border-[#1e4388]"
-                        value={insurance}
-                        onChange={(e) => setInsurance(e.target.value)}
-                      />
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">per year</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="otherFees">Other Fee (HOA etc.)</Label>
-                    <div className="relative">
-                      <Input
-                        id="otherFees"
-                        type="number"
-                        placeholder="Enter other fees"
-                        className="pl-8 transition-all duration-300 hover:border-[#1e4388]/50 focus:border-[#1e4388]"
-                        value={otherFees}
-                        onChange={(e) => setOtherFees(e.target.value)}
-                      />
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">per year</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="pmi">PMI (%)</Label>
-                    <div className="relative">
-                      <Input
-                        id="pmi"
-                        type="number"
-                        placeholder="Enter PMI"
-                        className="pl-8 transition-all duration-300 hover:border-[#1e4388]/50 focus:border-[#1e4388]"
-                        value={pmi}
-                        onChange={(e) => setPmi(e.target.value)}
-                      />
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">%</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="pmiOption">PMI Option</Label>
-                    <RadioGroup value={pmiOption} onValueChange={setPmiOption} className="space-y-1">
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="cancel" id="cancel-pmi" />
-                        <Label htmlFor="cancel-pmi">Cancel PMI after balance drops to 80% of the purchase price</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="life" id="life-pmi" />
-                        <Label htmlFor="life-pmi">PMI for the life of loan</Label>
-                      </div>
-                    </RadioGroup>
                   </div>
 
                   <div className="space-y-2">
@@ -398,7 +319,6 @@ export default function LoanCalculator() {
                         value={propertyPrice}
                         onChange={(e) => setPropertyPrice(e.target.value)}
                       />
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">RM</span>
                     </div>
                   </div>
                 </div>
@@ -441,18 +361,6 @@ export default function LoanCalculator() {
 
                             <div className="text-right font-medium">Extra Payment a Month:</div>
                             <div>{extraPayment}</div>
-
-                            <div className="text-right font-medium">Property Tax:</div>
-                            <div>{propertyTax}</div>
-
-                            <div className="text-right font-medium">Insurance:</div>
-                            <div>{insurance}</div>
-
-                            <div className="text-right font-medium">Other Fee (HOA etc.):</div>
-                            <div>{otherFees || "0.00"}</div>
-
-                            <div className="text-right font-medium">PMI:</div>
-                            <div>{pmi}</div>
 
                             <div className="text-right font-medium">Property Price:</div>
                             <div>{propertyPrice}</div>
