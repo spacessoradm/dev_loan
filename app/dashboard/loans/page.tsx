@@ -279,61 +279,70 @@ export default function LoansPage() {
           <Link href="/dashboard/apply">Apply for a Loan</Link>
         </Button>
       </div>
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {applications.map((application) => (
-          <Card key={application.id}>
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <CardTitle className="capitalize">
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Loan Type
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Preferred Bank
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Applied Date
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Status
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Action
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {applications.map((application) => (
+              <tr key={application.id}>
+                <td className="px-6 py-4 whitespace-nowrap capitalize">
                   {application.loan_type} Loan
-                </CardTitle>
-                <Badge className={getStatusColor(application.status)}>
-                  {application.status}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <dl className="space-y-2">
-                <div className="flex justify-between">
-                  <dt className="text-sm text-gray-500">Preferred Bank:</dt>
-                  <dd className="text-sm font-medium">
-                    {application.bank ? application.bank : "Not Preferred"}
-                  </dd>
-                </div>
-                <div className="flex justify-between">
-                  <dt className="text-sm text-gray-500">Applied:</dt>
-                  <dd className="text-sm font-medium">
-                    {formatDate(application.created_at)}
-                  </dd>
-                </div>
-              </dl>
-              
-              <div className="mt-4 flex gap-2">
-                {application.status.toLowerCase() === 'requested' ? (
-                  <Button 
-                    size="sm" 
-                    className="flex-1"
-                    onClick={() => handleEdit(application)}
-                  >
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit
-                  </Button>
-                ) : (
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => handleView(application)}
-                  >
-                    <Eye className="h-4 w-4 mr-2" />
-                    View
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  {application.bank ? application.bank : "Not Preferred"}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  {formatDate(application.created_at)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <Badge className={getStatusColor(application.status)}>
+                    {application.status}
+                  </Badge>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  {application.status.toLowerCase() === 'requested' ? (
+                    <Button 
+                      size="sm"
+                      onClick={() => handleEdit(application)}
+                    >
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit
+                    </Button>
+                  ) : (
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => handleView(application)}
+                    >
+                      <Eye className="h-4 w-4 mr-2" />
+                      View
+                    </Button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
+
 
       {/* View Application Dialog */}
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>

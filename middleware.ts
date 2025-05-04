@@ -16,7 +16,7 @@ export async function middleware(req: NextRequest) {
 
   // Get user profile with role
   const { data: profile, error } = await supabase
-    .from('profiles')
+    .from('Profiles')
     .select('role')
     .eq('id', session.user.id)
     .single()
@@ -24,7 +24,7 @@ export async function middleware(req: NextRequest) {
   // If no profile exists, create one
   if (error && error.code === 'PGRST116') {
     // Create a default profile
-    await supabase.from('profiles').insert({
+    await supabase.from('Profiles').insert({
       id: session.user.id,
       email: session.user.email,
       role: 'user'
@@ -41,9 +41,9 @@ export async function middleware(req: NextRequest) {
     if (path.startsWith('/dashboard/admin') && profile?.role !== 'admin') {
       return NextResponse.redirect(new URL('/dashboard', req.url))
     }
-    if (path.startsWith('/dashboard/banker') && profile?.role !== 'banker') {
-      return NextResponse.redirect(new URL('/dashboard', req.url))
-    }
+    //if (path.startsWith('/dashboard/banker') && profile?.role !== 'banker') {
+      //return NextResponse.redirect(new URL('/dashboard', req.url))
+    //}
     if (path === '/dashboard' && profile?.role && profile.role !== 'user') {
       return NextResponse.redirect(new URL(`/dashboard/${profile.role}`, req.url))
     }

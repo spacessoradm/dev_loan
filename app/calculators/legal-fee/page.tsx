@@ -3,60 +3,95 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { CalculatorHeader } from "@/components/calculator-header"
 
-export default function LegalFeeCalculator() {
+export default function LegalFeeCalculatorPage() {
   // Input states
-  const [purchasePrice, setPurchasePrice] = useState<string>("")
-  const [loanAmount, setLoanAmount] = useState<string>("")
-  const [downPaymentPercent, setDownPaymentPercent] = useState<string>("")
-  const [downPaymentAmount, setDownPaymentAmount] = useState<string>("0.00")
+  const [purchasePrice, setPurchasePrice] = useState<string>("300000.00")
+  const [marginOfFinance, setMarginOfFinance] = useState<string>("90")
+  const [tenure, setTenure] = useState<string>("30")
+  const [interestRate, setInterestRate] = useState<string>("4.5")
+  const [totalLoan, setTotalLoan] = useState<string>("270000.00")
+  const [monthlyInstallment, setMonthlyInstallment] = useState<string>("1368.05")
 
   // Result states
-  const [salePurchaseLegalFee, setSalePurchaseLegalFee] = useState<string>("0.00")
-  const [salePurchaseStampDuty, setSalePurchaseStampDuty] = useState<string>("0.00")
-  const [loanLegalFee, setLoanLegalFee] = useState<string>("0.00")
-  const [loanStampDuty, setLoanStampDuty] = useState<string>("0.00")
-  const [totalFees, setTotalFees] = useState<string>("0.00")
+  const [spaLegalFee, setSpaLegalFee] = useState<string>("3000.00")
+  const [spaStampDuty, setSpaStampDuty] = useState<string>("5000.00")
+  const [loanLegalFee, setLoanLegalFee] = useState<string>("2700.00")
+  const [loanStampDuty, setLoanStampDuty] = useState<string>("1350.00")
+  const [downpayment, setDownpayment] = useState<string>("30000.00")
+  const [totalPayment, setTotalPayment] = useState<string>("492498.12")
+  const [principalPercentage, setPrincipalPercentage] = useState<number>(54.8)
+  const [interestPercentage, setInterestPercentage] = useState<number>(45.2)
+  const [activeTab, setActiveTab] = useState<string>("legal-fees")
 
-  // Calculate down payment amount when purchase price or down payment percent changes
+  // Calculate total loan when purchase price or margin of finance changes
   useEffect(() => {
-    if (purchasePrice && downPaymentPercent) {
-      const price = Number.parseFloat(purchasePrice) || 0
-      const percent = Number.parseFloat(downPaymentPercent) || 0
-      const amount = price * (percent / 100)
-      setDownPaymentAmount(amount.toFixed(2))
-    } else {
-      setDownPaymentAmount("0.00")
-    }
-  }, [purchasePrice, downPaymentPercent])
+    if (purchasePrice && marginOfFinance) {
+      const price = Number.parseFloat(purchasePrice.replace(/,/g, "")) || 0
+      const margin = Number.parseFloat(marginOfFinance) || 0
+      const loan = price * (margin / 100)
+      setTotalLoan(loan.toFixed(2))
 
-  // Calculate fees when inputs change
+      // Calculate downpayment
+      const down = price - loan
+      setDownpayment(down.toFixed(2))
+    }
+  }, [purchasePrice, marginOfFinance])
+
+  // Calculate monthly installment when total loan, interest rate, or tenure changes
+  useEffect(() => {
+    if (totalLoan && interestRate && tenure) {
+      const loan = Number.parseFloat(totalLoan.replace(/,/g, "")) || 0
+      const rate = Number.parseFloat(interestRate) || 0
+      const years = Number.parseFloat(tenure) || 0
+
+      // Monthly interest rate
+      const monthlyRate = rate / 100 / 12
+      // Total number of payments
+      const payments = years * 12
+
+      // Calculate monthly payment using loan formula
+      const x = Math.pow(1 + monthlyRate, payments)
+      const monthly = (loan * x * monthlyRate) / (x - 1)
+
+      setMonthlyInstallment(monthly.toFixed(2))
+
+      // Calculate total payment
+      const totalPay = monthly * payments
+      setTotalPayment(totalPay.toFixed(2))
+
+      // Calculate interest vs principal percentages
+      const totalInterest = totalPay - loan
+      const principalPercent = (loan / totalPay) * 100
+      const interestPercent = (totalInterest / totalPay) * 100
+
+      setPrincipalPercentage(Math.round(principalPercent * 10) / 10)
+      setInterestPercentage(Math.round(interestPercent * 10) / 10)
+    }
+  }, [totalLoan, interestRate, tenure])
+
+  // Calculate fees when purchase price or total loan changes
   useEffect(() => {
     calculateFees()
-  }, [purchasePrice, loanAmount])
+  }, [purchasePrice, totalLoan])
 
   const calculateFees = () => {
-    const price = Number.parseFloat(purchasePrice) || 0
-    const loan = Number.parseFloat(loanAmount) || 0
+    const price = Number.parseFloat(purchasePrice.replace(/,/g, "")) || 0
+    const loan = Number.parseFloat(totalLoan.replace(/,/g, "")) || 0
 
     // Calculate Sale & Purchase Agreement Legal Fee
     let spLegalFee = 0
 
     if (price <= 500000) {
-      spLegalFee = price * 0.0125
+      spLegalFee = price * 0.01
       // Minimum fee of RM500
       spLegalFee = Math.max(spLegalFee, 500)
-    } else if (price <= 7500000) {
-      spLegalFee = 500000 * 0.0125 + (price - 500000) * 0.01
+    } else if (price <= 1000000) {
+      spLegalFee = 5000 + (price - 500000) * 0.008
     } else {
-      spLegalFee = 500000 * 0.0125 + 7000000 * 0.01
-      // For amounts exceeding 7.5M, negotiable but not exceeding 1%
-      spLegalFee += (price - 7500000) * 0.01
+      spLegalFee = 9000 + (price - 1000000) * 0.005
     }
 
     // Calculate Sale & Purchase Agreement Stamp Duty
@@ -65,194 +100,234 @@ export default function LegalFeeCalculator() {
     if (price <= 100000) {
       spStampDuty = price * 0.01
     } else if (price <= 500000) {
-      spStampDuty = 100000 * 0.01 + (price - 100000) * 0.02
+      spStampDuty = 1000 + (price - 100000) * 0.02
     } else if (price <= 1000000) {
-      spStampDuty = 100000 * 0.01 + 400000 * 0.02 + (price - 500000) * 0.03
+      spStampDuty = 9000 + (price - 500000) * 0.03
     } else {
-      spStampDuty = 100000 * 0.01 + 400000 * 0.02 + 500000 * 0.03 + (price - 1000000) * 0.04
+      spStampDuty = 24000 + (price - 1000000) * 0.04
     }
 
     // Calculate Loan Agreement Legal Fee
     let loanFee = 0
 
     if (loan <= 500000) {
-      loanFee = loan * 0.0125
+      loanFee = loan * 0.01
       // Minimum fee of RM500
       loanFee = Math.max(loanFee, 500)
-    } else if (loan <= 7500000) {
-      loanFee = 500000 * 0.0125 + (loan - 500000) * 0.01
+    } else if (loan <= 1000000) {
+      loanFee = 5000 + (loan - 500000) * 0.008
     } else {
-      loanFee = 500000 * 0.0125 + 7000000 * 0.01
-      // For amounts exceeding 7.5M, negotiable but not exceeding 1%
-      loanFee += (loan - 7500000) * 0.01
+      loanFee = 9000 + (loan - 1000000) * 0.005
     }
 
     // Calculate Loan Agreement Stamp Duty (0.5% of loan amount)
     const loanStampDuty = loan * 0.005
 
     // Update state with calculated values
-    setSalePurchaseLegalFee(spLegalFee.toFixed(2))
-    setSalePurchaseStampDuty(spStampDuty.toFixed(2))
+    setSpaLegalFee(spLegalFee.toFixed(2))
+    setSpaStampDuty(spStampDuty.toFixed(2))
     setLoanLegalFee(loanFee.toFixed(2))
     setLoanStampDuty(loanStampDuty.toFixed(2))
+  }
 
-    // Calculate total
-    const total = spLegalFee + spStampDuty + loanFee + loanStampDuty
-    setTotalFees(total.toFixed(2))
+  const formatCurrency = (value: string) => {
+    const num = Number.parseFloat(value.replace(/,/g, ""))
+    if (isNaN(num)) return ""
+    return num.toLocaleString("en-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
       <CalculatorHeader 
-        title="Legal Fee & Stamp Duty Calculator"
-        description="Calculate legal fees and stamp duties for your property transaction."
+        title="Legal Fee and Stamp Duty Calculator"
+        description="To help calculate all the basic costs that are involved in your property purchasing process."
       />
+      <div className="container mx-auto py-10 px-4 max-w-6xl">
+        <h1 className="text-3xl font-bold mb-8">Loan Calculator</h1>
 
-      <div className="container mx-auto px-4 py-12">
-        <div className="max-w-4xl mx-auto">
-          {/* Calculator Card */}
-          <div className="bg-white rounded-2xl shadow-xl p-8 md:p-12 transform hover:scale-[1.01] transition-all duration-300">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Input Section */}
-              <div className="space-y-6">
-                <div className="space-y-4">
-                  <h2 className="text-2xl font-bold text-gray-900">Enter Property Details</h2>
-                  <p className="text-gray-600">Calculate fees based on your property value.</p>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Left Column - Input Form */}
+          <div>
+            <div className="space-y-6">
+              <div className="flex items-center">
+                <label className="w-48 text-gray-700">Purchase Price</label>
+                <div className="relative flex-1 flex">
+                  <div className="bg-gray-200 flex items-center justify-center px-4 rounded-l-md">RM</div>
+                  <Input
+                    type="text"
+                    value={purchasePrice}
+                    onChange={(e) => setPurchasePrice(e.target.value)}
+                    className="rounded-l-none"
+                  />
                 </div>
-
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="purchasePrice">Purchase Price</Label>
-                    <div className="relative">
-                      <Input
-                        id="purchasePrice"
-                        type="number"
-                        placeholder="Enter purchase price"
-                        className="pl-8 transition-all duration-300 hover:border-[#1e4388]/50 focus:border-[#1e4388]"
-                        value={purchasePrice}
-                        onChange={(e) => setPurchasePrice(e.target.value)}
-                      />
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">RM</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="loanAmount">Loan Amount</Label>
-                    <div className="relative">
-                      <Input
-                        id="loanAmount"
-                        type="number"
-                        placeholder="Enter loan amount"
-                        className="pl-8 transition-all duration-300 hover:border-[#1e4388]/50 focus:border-[#1e4388]"
-                        value={loanAmount}
-                        onChange={(e) => setLoanAmount(e.target.value)}
-                      />
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">RM</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="downPaymentPercent">Down Payment (%)</Label>
-                    <Input
-                      id="downPaymentPercent"
-                      type="text"
-                      value={downPaymentPercent}
-                      onChange={(e) => setDownPaymentPercent(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="downPaymentAmount">Down Payment (RM)</Label>
-                    <Input id="downPaymentAmount" type="text" value={downPaymentAmount} disabled className="bg-gray-100" />
-                  </div>
-                </div>
-
-                <Button 
-                  className="w-full bg-[#1e4388] hover:bg-[#1e4388]/90 text-white transition-all duration-300"
-                  onClick={calculateFees}
-                >
-                  Calculate Fees
-                </Button>
               </div>
 
-              {/* Results Section */}
-              <div className="bg-gray-50 rounded-xl p-6 space-y-6">
-                <div className="space-y-2">
-                  <h3 className="text-xl font-semibold text-gray-900">Calculated Fees</h3>
-                  <p className="text-gray-600">Breakdown of all applicable fees</p>
+              <div className="flex items-center">
+                <label className="w-48 text-gray-700">Margin of Finance</label>
+                <div className="relative flex-1 flex">
+                  <Input
+                    type="text"
+                    value={marginOfFinance}
+                    onChange={(e) => setMarginOfFinance(e.target.value)}
+                    className="rounded-r-none"
+                  />
+                  <div className="bg-gray-200 flex items-center justify-center px-4 rounded-r-md">%</div>
                 </div>
+              </div>
 
-                <div className="space-y-4">
-                  {/* Legal Fee Result */}
-                  <div className="group bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-all duration-300">
-                    <div className="text-sm text-gray-600">Legal Fee</div>
-                    <div className="text-2xl font-bold text-[#1e4388] group-hover:scale-105 transition-transform">
-                      RM {salePurchaseLegalFee}
-                    </div>
-                  </div>
+              <div className="flex items-center">
+                <label className="w-48 text-gray-700">Tenure</label>
+                <div className="relative flex-1 flex">
+                  <Input
+                    type="text"
+                    value={tenure}
+                    onChange={(e) => setTenure(e.target.value)}
+                    className="rounded-r-none"
+                  />
+                  <div className="bg-gray-200 flex items-center justify-center px-4 rounded-r-md">Year(s)</div>
+                </div>
+              </div>
 
-                  {/* Stamp Duty Result */}
-                  <div className="group bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-all duration-300">
-                    <div className="text-sm text-gray-600">Stamp Duty</div>
-                    <div className="text-2xl font-bold text-[#1e4388] group-hover:scale-105 transition-transform">
-                      RM {salePurchaseStampDuty}
-                    </div>
-                  </div>
+              <div className="flex items-center">
+                <label className="w-48 text-gray-700">Interest Rate p.a.</label>
+                <div className="relative flex-1 flex">
+                  <Input
+                    type="text"
+                    value={interestRate}
+                    onChange={(e) => setInterestRate(e.target.value)}
+                    className="rounded-r-none"
+                  />
+                  <div className="bg-gray-200 flex items-center justify-center px-4 rounded-r-md">%</div>
+                </div>
+              </div>
 
-                  {/* Loan Legal Fee Result */}
-                  <div className="group bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-all duration-300">
-                    <div className="text-sm text-gray-600">Loan Legal Fee</div>
-                    <div className="text-2xl font-bold text-[#1e4388] group-hover:scale-105 transition-transform">
-                      RM {loanLegalFee}
-                    </div>
-                  </div>
-
-                  {/* Loan Stamp Duty Result */}
-                  <div className="group bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-all duration-300">
-                    <div className="text-sm text-gray-600">Loan Stamp Duty</div>
-                    <div className="text-2xl font-bold text-[#1e4388] group-hover:scale-105 transition-transform">
-                      RM {loanStampDuty}
-                    </div>
-                  </div>
-
-                  {/* Total Fees Result */}
-                  <div className="group bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-all duration-300">
-                    <div className="text-sm text-gray-600">Total Fees</div>
-                    <div className="text-2xl font-bold text-[#1e4388] group-hover:scale-105 transition-transform">
-                      RM {totalFees}
-                    </div>
+              <div className="flex items-center">
+                <label className="w-48 text-gray-700">Total Loan</label>
+                <div className="relative flex-1">
+                  <div className="bg-gray-200 p-3 rounded-md flex items-center">
+                    <span className="mr-2">RM</span>
+                    <span>{formatCurrency(totalLoan)}</span>
                   </div>
                 </div>
+              </div>
+
+              <div className="flex items-center">
+                <label className="w-48 text-gray-700">Monthly Installment</label>
+                <div className="relative flex-1">
+                  <div className="bg-gray-200 p-3 rounded-md flex items-center">
+                    <span className="mr-2">RM</span>
+                    <span>{formatCurrency(monthlyInstallment)}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex space-x-4 mt-8">
+                <Button variant="outline" className="flex-1 border-orange-500 text-orange-500 hover:bg-orange-50">
+                  VIEW INTEREST RATE
+                </Button>
+                <Button className="flex-1 bg-blue-600 hover:bg-blue-700" onClick={calculateFees}>
+                  CALCULATE
+                </Button>
               </div>
             </div>
           </div>
 
-          {/* Additional Information */}
-          <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Legal Fee Scale</h3>
-              <p className="text-gray-600">
-                Legal fees are calculated based on the statutory scale provided by the Legal Profession Act.
-              </p>
-            </div>
-            
-            <div className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Stamp Duty Rates</h3>
-              <p className="text-gray-600">
-                Stamp duty rates vary based on property value and are regulated by the Stamp Act.
-              </p>
-            </div>
+          {/* Right Column - Results */}
+          <div className="border rounded-lg overflow-hidden">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="w-full grid grid-cols-2 rounded-none h-auto">
+                <TabsTrigger
+                  value="total-payment"
+                  className="py-3 rounded-none data-[state=active]:bg-gray-700 data-[state=active]:text-white"
+                >
+                  Total Payment
+                </TabsTrigger>
+                <TabsTrigger
+                  value="legal-fees"
+                  className="py-3 rounded-none data-[state=active]:bg-gray-700 data-[state=active]:text-white"
+                >
+                  Legal Fees & Stamp Duty
+                </TabsTrigger>
+              </TabsList>
 
-            <div className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Additional Costs</h3>
-              <p className="text-gray-600">
-                Remember to consider other costs like registration fees and disbursements.
-              </p>
-            </div>
+              <TabsContent value="total-payment" className="p-6 pt-10">
+                <div className="flex flex-col items-center">
+                  <div className="w-64 h-64 relative mb-6">
+                    <svg viewBox="0 0 100 100" className="w-full h-full">
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r="40"
+                        fill="transparent"
+                        stroke="#4dabf7"
+                        strokeWidth="20"
+                        strokeDasharray={`${principalPercentage} ${interestPercentage}`}
+                        strokeDashoffset="25"
+                      />
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r="40"
+                        fill="transparent"
+                        stroke="#4dd4ac"
+                        strokeWidth="20"
+                        strokeDasharray={`${interestPercentage} ${principalPercentage}`}
+                        strokeDashoffset={`${-principalPercentage + 25}`}
+                      />
+                    </svg>
+                  </div>
+
+                  <div className="text-center mb-4">
+                    <p className="text-lg font-medium">Total Payment</p>
+                    <p className="text-4xl font-bold text-gray-800">RM {formatCurrency(totalPayment)}</p>
+                  </div>
+
+                  <div className="flex justify-center space-x-8">
+                    <div className="flex items-center">
+                      <div className="w-4 h-4 bg-[#4dd4ac] rounded-full mr-2"></div>
+                      <span>Interest {interestPercentage}%</span>
+                    </div>
+                    <div className="flex items-center">
+                      <div className="w-4 h-4 bg-[#4dabf7] rounded-full mr-2"></div>
+                      <span>Principal {principalPercentage}%</span>
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="legal-fees" className="p-0">
+                <div className="p-6 bg-gray-50">
+                  <h3 className="font-medium mb-4">Sale & Purchase Agreement Costs</h3>
+                  <div className="flex justify-between py-2">
+                    <span>SPA Legal Fees:</span>
+                    <span className="font-medium">RM {formatCurrency(spaLegalFee)}</span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b">
+                    <span>SPA Stamp Duty:</span>
+                    <span className="font-medium">RM {formatCurrency(spaStampDuty)}</span>
+                  </div>
+
+                  <h3 className="font-medium mt-6 mb-4">Loan Documentation Costs</h3>
+                  <div className="flex justify-between py-2">
+                    <span>Loan Documentation Legal Fees:</span>
+                    <span className="font-medium">RM {formatCurrency(loanLegalFee)}</span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b">
+                    <span>Loan Documentation Stamp Duty:</span>
+                    <span className="font-medium">RM {formatCurrency(loanStampDuty)}</span>
+                  </div>
+
+                  <h3 className="font-medium mt-6 mb-4">Others</h3>
+                  <div className="flex justify-between py-2 border-b">
+                    <span>Downpayment:</span>
+                    <span className="font-medium">RM {formatCurrency(downpayment)}</span>
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
       </div>
     </div>
   )
 }
-

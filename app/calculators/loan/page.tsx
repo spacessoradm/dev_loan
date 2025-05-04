@@ -36,6 +36,9 @@ export default function LoanCalculator() {
   const [interestSaving, setInterestSaving] = useState<string>("")
   const [payoffEarlier, setPayoffEarlier] = useState<string>("")
 
+  const [showLoanTerm, setShowLoanTerm] = useState(false);
+
+
   // State to track if results should be shown
   const [showResults, setShowResults] = useState<boolean>(false)
 
@@ -266,6 +269,7 @@ export default function LoanCalculator() {
                     </div>
                   </div>
 
+                  {showLoanTerm && (
                   <div className="space-y-2">
                     <Label htmlFor="loanTermYears">Loan Term (Years)</Label>
                     <div className="relative">
@@ -278,8 +282,9 @@ export default function LoanCalculator() {
                         onChange={(e) => setLoanTermYears(e.target.value)}
                       />
                     </div>
-                  </div>
+                  </div>)}
 
+                  {showLoanTerm && (
                   <div className="space-y-2">
                     <Label htmlFor="loanTermMonths">Loan Term (Months)</Label>
                     <div className="relative">
@@ -293,6 +298,7 @@ export default function LoanCalculator() {
                       />
                     </div>
                   </div>
+                  )}
 
                   <div className="space-y-2">
                     <Label htmlFor="extraPayment">Extra Payment a Month</Label>
@@ -308,6 +314,7 @@ export default function LoanCalculator() {
                     </div>
                   </div>
 
+                  {showLoanTerm && (
                   <div className="space-y-2">
                     <Label htmlFor="propertyPrice">Property Price</Label>
                     <div className="relative">
@@ -320,7 +327,7 @@ export default function LoanCalculator() {
                         onChange={(e) => setPropertyPrice(e.target.value)}
                       />
                     </div>
-                  </div>
+                  </div>)}
                 </div>
 
                 <div className="grid grid-cols-3 gap-4 pt-4">
@@ -452,19 +459,21 @@ export default function LoanCalculator() {
                     </div>
                   </div>
 
+                  {showLoanTerm && (
                   <div className="group bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-all duration-300">
                     <div className="text-sm text-gray-600">Monthly PMI</div>
                     <div className="text-2xl font-bold text-[#1e4388] group-hover:scale-105 transition-transform">
                       {monthlyPmi}
                     </div>
-                  </div>
+                  </div>)}
 
+                  {showLoanTerm && (
                   <div className="group bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-all duration-300">
                     <div className="text-sm text-gray-600">Monthly Payment without PMI</div>
                     <div className="text-2xl font-bold text-[#1e4388] group-hover:scale-105 transition-transform">
                       RM {monthlyPaymentWithoutPmi}
                     </div>
-                  </div>
+                  </div>)}
 
                   <div className="group bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-all duration-300">
                     <div className="text-sm text-gray-600">Total Payment</div>
@@ -486,13 +495,14 @@ export default function LoanCalculator() {
                       RM {annualPayment}
                     </div>
                   </div>
-
+                  
+                  {showLoanTerm && (
                   <div className="group bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-all duration-300">
                     <div className="text-sm text-gray-600">Mortgage Constant</div>
                     <div className="text-2xl font-bold text-[#1e4388] group-hover:scale-105 transition-transform">
                       {mortgageConstant}
                     </div>
-                  </div>
+                  </div>)}
 
                   <div className="group bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-all duration-300">
                     <div className="text-sm text-gray-600">Interest Saving</div>

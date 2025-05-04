@@ -197,7 +197,7 @@ export default function ApplyLoanPage() {
         workplace: formData.get('workplace') as string,
         income: 0,
         bank: formData.get('bank') as string,
-        status: 'pending',
+        status: 'requested',
         doc_paths: docPaths,
         created_at: new Date().toISOString()
       })

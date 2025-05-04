@@ -15,31 +15,26 @@ const images = [
   "https://pbvigsmmzasgbuqgwwdt.supabase.co/storage/v1/object/public/home//slide_1.jpg",
   "https://pbvigsmmzasgbuqgwwdt.supabase.co/storage/v1/object/public/home//slide_2.jpg",
   "https://pbvigsmmzasgbuqgwwdt.supabase.co/storage/v1/object/public/home//slide_3.jpg",
-  "https://pbvigsmmzasgbuqgwwdt.supabase.co/storage/v1/object/public/home//slide_4.jpg",
 ]
 
 const slides = [
   {
     url: "https://pbvigsmmzasgbuqgwwdt.supabase.co/storage/v1/object/public/home//hero1.jpg",
-    title: "Fast & Easy Loan Applications",
-    description: "Get the financial support you need with our streamlined process"
+    title: "Apply for Your Dream Home Loan Easily",
+    description: "Experience a hassle-free mortgage application process with quick approvals and expert guidance every step of the way."
   },
   {
     url: "https://pbvigsmmzasgbuqgwwdt.supabase.co/storage/v1/object/public/home//hero2.jpg",
-    title: "Competitive Interest Rates",
-    description: "We offer some of the most competitive rates in the market"
+    title: "Refinance for Better Rates & Savings",
+    description: "Lower your monthly payments or access extra cash with our smart refinancing solutions tailored to your goals."
   },
   {
     url: "https://pbvigsmmzasgbuqgwwdt.supabase.co/storage/v1/object/public/home//hero3.jpg",
-    title: "Flexible Payment Options",
-    description: "Choose from various repayment plans that suit your needs"
+    title: "Compare Loans & Find the Best Deal",
+    description: "Easily compare loan offers from top lenders to choose the one that gives you the best value and flexibility."
   },
-  {
-    url: "https://pbvigsmmzasgbuqgwwdt.supabase.co/storage/v1/object/public/home//hero4.jpg",
-    title: "Quick Approval Process",
-    description: "Get a decision on your loan application within hours"
-  }
 ]
+
 
 export default function Home() {
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -80,18 +75,27 @@ export default function Home() {
                       <Button
                         asChild
                         size="lg"
-                        className="bg-[#ffc107] hover:bg-[#e5ac00] text-black"
+                        className="bg-[#3498db] hover:bg-blue text-black"
                       >
-                        <Link href="/register">Get Started</Link>
+                        <Link href="/register">Apply Loan</Link>
                       </Button>
                       <Button
                         asChild
                         size="lg"
                         variant="outline"
-                        className="border-white hover:bg-white/10 text-white"
+                        className="border-white bg-[#3498db] hover:bg-blue/10 text-white"
                         style={{ color: 'black' }}
                       >
-                        <Link href="/about">Learn More</Link>
+                        <Link href="/about">Refinance</Link>
+                      </Button>
+                      <Button
+                        asChild
+                        size="lg"
+                        variant="outline"
+                        className="border-white bg-[#2ecc71] hover:bg-green/10 text-white"
+                        style={{ color: 'black' }}
+                      >
+                        <Link href="/about">Compare Loan Package</Link>
                       </Button>
                     </div>
                   </div>
@@ -152,6 +156,11 @@ export default function Home() {
                     DSR Calculator
                   </Link>
                 </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Link href="/calculators/rpgt" className="w-full">
+                    RPGT Calculator
+                  </Link>
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
             <Button asChild variant="outline" className="text-black border-white hover:bg-white hover:text-[#1e4388]">
@@ -183,87 +192,54 @@ export default function Home() {
 
       {/* Features Section */}
       <section className="py-24 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-[#1e4388] to-[#ffc107] bg-clip-text text-transparent">
-              Your Credit Solutions in One Place
-            </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Discover a smarter way to manage your loans with our comprehensive suite of tools
-            </p>
-          </div>
+  <div className="container mx-auto px-4">
+    <div className="text-center mb-16">
+      <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-[#1e4388] to-[#ffc107] bg-clip-text text-transparent">
+        Your Credit Solutions in One Place
+      </h2>
+      <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+        Discover a smarter way to manage your loans with our comprehensive suite of tools
+      </p>
+    </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Feature 1 */}
-            <div className="group p-8 rounded-2xl bg-white border border-gray-100 hover:border-[#1e4388]/20 transition-all duration-300 hover:shadow-2xl">
-              <div className="mb-6 relative">
-                <div className="w-14 h-14 bg-[#1e4388]/10 rounded-xl flex items-center justify-center group-hover:bg-[#1e4388] transition-colors duration-300">
-                  <svg
-                    className="w-7 h-7 text-[#1e4388] group-hover:text-white transition-colors duration-300"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-              </div>
-              <h3 className="text-xl font-bold mb-3 group-hover:text-[#1e4388] transition-colors duration-300">
-                Quick Eligibility Check
-              </h3>
-              <p className="text-gray-600 leading-relaxed">
-                Get instant feedback on your loan eligibility without impacting your credit score.
-              </p>
-            </div>
-
-            {/* Feature 2 */}
-            <div className="group p-8 rounded-2xl bg-white border border-gray-100 hover:border-[#1e4388]/20 transition-all duration-300 hover:shadow-2xl">
-              <div className="mb-6">
-                <div className="w-14 h-14 bg-[#1e4388]/10 rounded-xl flex items-center justify-center group-hover:bg-[#1e4388] transition-colors duration-300">
-                  <svg
-                    className="w-7 h-7 text-[#1e4388] group-hover:text-white transition-colors duration-300"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-              </div>
-              <h3 className="text-xl font-bold mb-3 group-hover:text-[#1e4388] transition-colors duration-300">
-                Competitive Rates
-              </h3>
-              <p className="text-gray-600 leading-relaxed">
-                Access the best rates from multiple banks, all in one convenient platform.
-              </p>
-            </div>
-
-            {/* Feature 3 */}
-            {/* <div className="group p-8 rounded-2xl bg-white border border-gray-100 hover:border-[#1e4388]/20 transition-all duration-300 hover:shadow-2xl">
-              <div className="mb-6">
-                <div className="w-14 h-14 bg-[#1e4388]/10 rounded-xl flex items-center justify-center group-hover:bg-[#1e4388] transition-colors duration-300">
-                  <svg
-                    className="w-7 h-7 text-[#1e4388] group-hover:text-white transition-colors duration-300"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                </div>
-              </div>
-              <h3 className="text-xl font-bold mb-3 group-hover:text-[#1e4388] transition-colors duration-300">
-                Fast Approval
-              </h3>
-              <p className="text-gray-600 leading-relaxed">
-                Get your loan approved quickly with our streamlined application process.
-              </p>
-            </div> */}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      {/* Feature 1 */}
+      <div className="group p-8 rounded-2xl bg-white border border-gray-100 hover:border-[#1e4388]/20 transition-all duration-300 hover:shadow-2xl">
+        <div className="mb-6">
+          <div className="w-14 h-14 bg-[#1e4388]/10 rounded-xl flex items-center justify-center group-hover:bg-[#1e4388] transition-colors duration-300">
+            <svg className="w-7 h-7 text-[#1e4388] group-hover:text-white transition-colors duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
           </div>
         </div>
+        <h3 className="text-xl font-bold mb-3 group-hover:text-[#1e4388] transition-colors duration-300">
+          Quick Eligibility Check
+        </h3>
+        <p className="text-gray-600 leading-relaxed">
+          Get instant feedback on your loan eligibility without impacting your credit score.
+        </p>
+      </div>
+
+      {/* Feature 2 */}
+      <div className="group p-8 rounded-2xl bg-white border border-gray-100 hover:border-[#1e4388]/20 transition-all duration-300 hover:shadow-2xl">
+        <div className="mb-6">
+          <div className="w-14 h-14 bg-[#1e4388]/10 rounded-xl flex items-center justify-center group-hover:bg-[#1e4388] transition-colors duration-300">
+            <svg className="w-7 h-7 text-[#1e4388] group-hover:text-white transition-colors duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+        </div>
+        <h3 className="text-xl font-bold mb-3 group-hover:text-[#1e4388] transition-colors duration-300">
+          Competitive Rates
+        </h3>
+        <p className="text-gray-600 leading-relaxed">
+          Access the best rates from multiple banks, all in one convenient platform.
+        </p>
+      </div>
+    </div>
+  </div>
       </section>
 
-      {/* Loan Types Section */}
       <section className="py-24 bg-gray-50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
@@ -276,130 +252,61 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {/* Loan Type 1 - Home Loans */}
-            <div className="group relative overflow-hidden rounded-2xl bg-white hover:shadow-2xl transition-all duration-500 ease-out">
-              <div className="absolute inset-0 bg-gradient-to-r from-[#1e4388] to-[#1e4388]/80 translate-y-[100%] group-hover:translate-y-0 transition-transform duration-500" />
-              <div className="relative p-8 transition-all duration-500 group-hover:translate-y-[-1rem]">
-                <div className="mb-6 w-14 h-14 rounded-xl bg-[#1e4388]/10 flex items-center justify-center group-hover:bg-white/10 transition-colors duration-500">
-                  <svg
-                    className="w-7 h-7 text-[#1e4388] group-hover:text-white transition-colors duration-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                    <polyline points="9 22 9 12 15 12 15 22" />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-bold mb-3 text-gray-900 group-hover:text-white transition-colors duration-500">
-                  Home Loans
-                </h3>
-                <p className="text-gray-600 group-hover:text-white/80 transition-colors duration-500 mb-6">
-                  Find the best mortgage rates for your dream home purchase or refinancing needs.
-                </p>
-                <Link 
-                  href="/loans/home" 
-                  className="inline-flex items-center text-[#1e4388] group-hover:text-white transition-colors duration-500"
-                >
-                  Learn more 
-                  <ArrowRight className="ml-2 w-4 h-4 transform group-hover:translate-x-2 transition-transform duration-300" />
-                </Link>
+            {/* Home Loans */}
+            <a href="/loans/home" className="group p-6 bg-white rounded-2xl border border-gray-100 hover:shadow-xl transition">
+              <div className="flex items-center justify-center w-14 h-14 rounded-xl bg-[#1e4388]/10 group-hover:bg-[#1e4388] transition">
+                <svg className="w-7 h-7 text-[#1e4388] group-hover:text-white transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+                  <polyline points="9 22 9 12 15 12 15 22" />
+                </svg>
               </div>
-            </div>
+              <h3 className="text-xl font-bold mt-4 mb-2 group-hover:text-[#1e4388]">Home Loans</h3>
+              <p className="text-gray-600 text-sm">
+                Find the best mortgage rates for your dream home purchase or refinancing needs.
+              </p>
+            </a>
 
-            {/* Loan Type 2 - Auto Loans */}
-            <div className="group relative overflow-hidden rounded-2xl bg-white hover:shadow-2xl transition-all duration-500 ease-out">
-              <div className="absolute inset-0 bg-gradient-to-r from-[#ffc107] to-[#ffc107]/80 translate-y-[100%] group-hover:translate-y-0 transition-transform duration-500" />
-              <div className="relative p-8 transition-all duration-500 group-hover:translate-y-[-1rem]">
-                <div className="mb-6 w-14 h-14 rounded-xl bg-[#ffc107]/10 flex items-center justify-center group-hover:bg-white/10 transition-colors duration-500">
-                  <svg
-                    className="w-7 h-7 text-[#ffc107] group-hover:text-white transition-colors duration-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <rect x="1" y="3" width="15" height="13"></rect>
-                    <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
-                    <circle cx="5.5" cy="18.5" r="2.5"></circle>
-                    <circle cx="18.5" cy="18.5" r="2.5"></circle>
-                  </svg>
-                </div>
-                <h3 className="text-xl font-bold mb-3 text-gray-900 group-hover:text-white transition-colors duration-500">
-                  Auto Loans
-                </h3>
-                <p className="text-gray-600 group-hover:text-white/80 transition-colors duration-500 mb-6">
-                  Get competitive rates to finance your next vehicle purchase.
-                </p>
-                <Link 
-                  href="/loans/auto" 
-                  className="inline-flex items-center text-[#ffc107] group-hover:text-white transition-colors duration-500"
-                >
-                  Learn more 
-                  <ArrowRight className="ml-2 w-4 h-4 transform group-hover:translate-x-2 transition-transform duration-300" />
-                </Link>
+            {/* Auto Loans */}
+            <a href="/loans/auto" className="group p-6 bg-white rounded-2xl border border-gray-100 hover:shadow-xl transition">
+              <div className="flex items-center justify-center w-14 h-14 rounded-xl bg-[#ffc107]/10 group-hover:bg-[#ffc107] transition">
+                <svg className="w-7 h-7 text-[#ffc107] group-hover:text-white transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path d="M5 13l1-2h12l1 2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <circle cx="7" cy="17" r="2" />
+                  <circle cx="17" cy="17" r="2" />
+                </svg>
               </div>
-            </div>
+              <h3 className="text-xl font-bold mt-4 mb-2 group-hover:text-[#ffc107]">Auto Loans</h3>
+              <p className="text-gray-600 text-sm">
+                Get competitive rates to finance your next vehicle purchase.
+              </p>
+            </a>
 
-            {/* Loan Type 3 - Personal Loans */}
-            <div className="group relative overflow-hidden rounded-2xl bg-white hover:shadow-2xl transition-all duration-500 ease-out">
-              <div className="absolute inset-0 bg-gradient-to-r from-[#1e4388] to-[#1e4388]/80 translate-y-[100%] group-hover:translate-y-0 transition-transform duration-500" />
-              <div className="relative p-8 transition-all duration-500 group-hover:translate-y-[-1rem]">
-                <div className="mb-6 w-14 h-14 rounded-xl bg-[#1e4388]/10 flex items-center justify-center group-hover:bg-white/10 transition-colors duration-500">
-                  <svg
-                    className="w-7 h-7 text-[#1e4388] group-hover:text-white transition-colors duration-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="12" cy="7" r="4"></circle>
-                  </svg>
-                </div>
-                <h3 className="text-xl font-bold mb-3 text-gray-900 group-hover:text-white transition-colors duration-500">
-                  Personal Loans
-                </h3>
-                <p className="text-gray-600 group-hover:text-white/80 transition-colors duration-500 mb-6">
-                  Flexible personal loans for your various financial needs.
-                </p>
-                <Link 
-                  href="/loans/personal" 
-                  className="inline-flex items-center text-[#1e4388] group-hover:text-white transition-colors duration-500"
-                >
-                  Learn more 
-                  <ArrowRight className="ml-2 w-4 h-4 transform group-hover:translate-x-2 transition-transform duration-300" />
-                </Link>
+            {/* Personal Loans */}
+            <a href="/loans/personal" className="group p-6 bg-white rounded-2xl border border-gray-100 hover:shadow-xl transition">
+              <div className="flex items-center justify-center w-14 h-14 rounded-xl bg-[#1e4388]/10 group-hover:bg-[#1e4388] transition">
+                <svg className="w-7 h-7 text-[#1e4388] group-hover:text-white transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <circle cx="12" cy="7" r="4" />
+                  <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
               </div>
-            </div>
+              <h3 className="text-xl font-bold mt-4 mb-2 group-hover:text-[#1e4388]">Personal Loans</h3>
+              <p className="text-gray-600 text-sm">
+                Flexible personal loans for your various financial needs.
+              </p>
+            </a>
 
-            {/* Loan Type 4 - Business Loans */}
-            <div className="group relative overflow-hidden rounded-2xl bg-white hover:shadow-2xl transition-all duration-500 ease-out">
-              <div className="absolute inset-0 bg-gradient-to-r from-[#ffc107] to-[#ffc107]/80 translate-y-[100%] group-hover:translate-y-0 transition-transform duration-500" />
-              <div className="relative p-8 transition-all duration-500 group-hover:translate-y-[-1rem]">
-                <div className="mb-6 w-14 h-14 rounded-xl bg-[#ffc107]/10 flex items-center justify-center group-hover:bg-white/10 transition-colors duration-500">
-                  <svg
-                    className="w-7 h-7 text-[#ffc107] group-hover:text-white transition-colors duration-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
-                  </svg>
-                </div>
-                <h3 className="text-xl font-bold mb-3 text-gray-900 group-hover:text-white transition-colors duration-500">
-                  Business Loans
-                </h3>
-                <p className="text-gray-600 group-hover:text-white/80 transition-colors duration-500 mb-6">
-                  Grow your business with our tailored financing solutions.
-                </p>
-                <Link 
-                  href="/loans/business" 
-                  className="inline-flex items-center text-[#ffc107] group-hover:text-white transition-colors duration-500"
-                >
-                  Learn more 
-                  <ArrowRight className="ml-2 w-4 h-4 transform group-hover:translate-x-2 transition-transform duration-300" />
-                </Link>
+            {/* Business Loans */}
+            <a href="/loans/business" className="group p-6 bg-white rounded-2xl border border-gray-100 hover:shadow-xl transition">
+              <div className="flex items-center justify-center w-14 h-14 rounded-xl bg-[#ffc107]/10 group-hover:bg-[#ffc107] transition">
+                <svg className="w-7 h-7 text-[#ffc107] group-hover:text-white transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path d="M22 12h-4l-3 9L9 3l-3 9H2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
               </div>
-            </div>
+              <h3 className="text-xl font-bold mt-4 mb-2 group-hover:text-[#ffc107]">Business Loans</h3>
+              <p className="text-gray-600 text-sm">
+                Grow your business with our tailored financing solutions.
+              </p>
+            </a>
           </div>
         </div>
       </section>
@@ -598,7 +505,7 @@ export default function Home() {
                 <Button 
                   asChild
                   size="lg"
-                  className="group relative bg-[#ffc107] hover:bg-[#ffc107]/90 text-black text-lg px-8 py-6 rounded-full overflow-hidden"
+                  className="group relative bg-[#3498db] hover:bg-[#3498db]/90 text-black text-lg px-8 py-6 rounded-full overflow-hidden"
                 >
                   <Link href="/register" className="flex items-center gap-2">
                     Get Started Now
@@ -610,7 +517,7 @@ export default function Home() {
                   asChild
                   size="lg"
                   variant="outline"
-                  className="group border-white/30 hover:border-white text-white text-lg px-8 py-6 rounded-full"
+                  className="group bg-[#2ecc71] border-white/30 hover:border-white text-black text-lg px-8 py-6 rounded-full"
                 >
                   <Link href="/about" className="flex items-center gap-2">
                     Learn More
@@ -634,13 +541,9 @@ export default function Home() {
                   <path d="M25,2C12.3,2,2,12.3,2,25s10.3,23,23,23s23-10.3,23-23S37.7,2,25,2z M25,11c4.4,0,8,3.6,8,8s-3.6,8-8,8s-8-3.6-8-8S20.6,11,25,11z M25,43c-5.3,0-10.2-2.1-13.8-5.5c-0.6-0.6-0.9-1.3-0.9-2.1c0-4.1,3.3-7.4,7.4-7.4h14.7c4.1,0,7.4,3.3,7.4,7.4c0,0.8-0.3,1.5-0.9,2.1C35.2,40.9,30.3,43,25,43z" />
                 </svg>
             <div>
-                  <div className="text-2xl font-bold">Demo_Loan</div>
-                  <div className="text-sm text-gray-400">Check | Apply | Approve</div>
+                  <div className="text-2xl"><img src="https://pbvigsmmzasgbuqgwwdt.supabase.co/storage/v1/object/public/home//speedx_logo.png"></img></div>
                 </div>
               </Link>
-              <p className="text-gray-400 max-w-xs">
-                Transforming the way people access financial services through technology and innovation.
-              </p>
               <div className="flex space-x-4">
                 {/* Social Media Icons with hover effects */}
                 <a href="#" className="group p-2 bg-white/5 rounded-full hover:bg-[#ffc107]/20 transition-colors">
@@ -720,7 +623,7 @@ export default function Home() {
           <div className="border-t border-white/10 pt-8">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
               <p className="text-gray-400 text-sm">
-                © 2024 Demo_Loan. All rights reserved.
+                © 2025 SpeedX. All rights reserved.
               </p>
               <div className="flex gap-6">
                 <Link href="#" className="text-gray-400 hover:text-[#ffc107] text-sm transition-colors">Terms of Service</Link>

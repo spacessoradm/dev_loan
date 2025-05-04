@@ -16,19 +16,25 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { toast } from "@/hooks/use-toast"
-import { XCircle, Eye } from "lucide-react"
+import { XCircle, Eye, Download } from "lucide-react"
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
 
 export default function ApplicationsPage() {
   const [loading, setLoading] = useState(true)
   const [applications, setApplications] = useState<any[]>([])
   const [selectedApplication, setSelectedApplication] = useState<any>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false)
   const [processingAction, setProcessingAction] = useState(false)
   const [userRole, setUserRole] = useState<string | null>(null)
   const [remarks, setRemarks] = useState<string>("")
   const supabase = createClientComponentClient()
   const [bankers, setBankers] = useState<any[]>([]);
   const [assignedBankers, setAssignedBankers] = useState<string[]>([]);
+  const [selectedAdmin, setSelectedAdmin] = useState("");
+  const [smallAdmins, setSmallAdmins] = useState<any[]>([]);
+
 
 
   const BASE_STORAGE_URL = "https://pbvigsmmzasgbuqgwwdt.supabase.co/storage/v1/object/public/documents/";
@@ -40,20 +46,20 @@ export default function ApplicationsPage() {
         const {
           data: { session },
         } = await supabase.auth.getSession();
-
+  
         if (!session) return;
-
+  
         const { data: userData, error: userError } = await supabase
           .from("profiles")
           .select("*")
           .eq("user_id", session.user.id)
           .single();
-
+  
         if (userError) throw userError;
-
+  
         setUserRole(userData?.role);
-
-        if (userData?.role !== "admin" && userData?.role !== "banker") {
+  
+        if (userData?.role !== "admin" && userData?.role !== "sadmin" && userData?.role !== "banker") {
           toast({
             title: "Access Denied",
             description: "You don't have permission to view this page",
@@ -61,25 +67,89 @@ export default function ApplicationsPage() {
           });
           return;
         }
-
+  
         // Fetch bankers
         const { data: bankersData, error: bankersError } = await supabase
           .from("profiles")
           .select("id, full_name, bank_name")
           .eq("role", "banker")
           .eq("account_status", "activated");
-
+  
         if (bankersError) throw bankersError;
         setBankers(bankersData || []);
-
-        // Fetch applications based on role
-        let applicationsQuery = supabase.from("applications").select("*").order("created_at", { ascending: false });
-
-        const { data, error } = await applicationsQuery;
-        if (error) throw error;
-
-        setApplications(data || []);      
+  
+        // Fetch sadmins
+        const { data: sAdminData, error: sAdminError } = await supabase
+          .from("profiles")
+          .select("id, full_name")
+          .eq("role", "sadmin")
+          .eq("account_status", "activated");
+  
+        if (sAdminError) throw sAdminError;
+        setSmallAdmins(sAdminData || []);
+  
+        // Fetch applications
+        const { data: applications, error: appError } = await supabase
+          .from("applications")
+          .select("*")
+          .order("created_at", { ascending: false });
+  
+        if (appError) throw appError;
+  
+        // Fetch sub-applications
+        const { data: subApplications, error: subAppError } = await supabase
+          .from("sub_applications")
+          .select("*");
+  
+        if (subAppError) throw subAppError;
+  
+        // Fetch statuses
+        const { data: statuses, error: statusError } = await supabase
+          .from("app_status")
+          .select("*");
+  
+        if (statusError) throw statusError;
+  
+        // Merge process
+        let mergedList: any[] = [];
+  
+        applications.forEach((app) => {
+          const relatedSubApps = subApplications?.filter(
+            (sub) => sub.application_id === app.id
+          );
+        
+          if (relatedSubApps && relatedSubApps.length > 0) {
+            relatedSubApps.forEach((subApp) => {
+              const matchingStatus = statuses.find(
+                (status) => Number(subApp.status) === status.id
+              );
+        
+              mergedList.push({
+                ...app,            // 1. Take everything from parent application first (full_name, etc.)
+                ...subApp,         // 2. Then override with sub_application fields (loan_amount, status, etc.)
+                parent_application_id: app.id,
+                status_name: matchingStatus ? matchingStatus.status_name : "Unknown",
+                isSubApplication: true,
+              });
+            });
+          } else {
+            const matchingStatus = statuses.find(
+              (status) => Number(app.status) === status.id
+            );
+        
+            mergedList.push({
+              ...app,
+              status_name: matchingStatus ? matchingStatus.status_name : "Unknown",
+              isSubApplication: false,
+            });
+          }
+        });
+        
+        console.log(mergedList)
+  
+        setApplications(mergedList || []);
       } catch (error: any) {
+        console.error(error);
         toast({
           title: "Error",
           description: "Failed to load applications",
@@ -89,15 +159,14 @@ export default function ApplicationsPage() {
         setLoading(false);
       }
     };
-
+  
     fetchData();
-  }, []);
+  }, []);  
 
   const handleAssignBanker = async (applicationId: string, bankerIds: string[]) => {
     setProcessingAction(true);
   
     const stringBankerIds = bankerIds.map(String);
-    console.log("Banker IDs:", stringBankerIds);
   
     try {
       // 1. Update the main applications table
@@ -156,6 +225,60 @@ export default function ApplicationsPage() {
     }
   };
   
+  const handleAssignAdmin = async (applicationId: string, adminId: string) => {
+    if (!adminId) return;
+  
+    setProcessingAction(true);
+  
+    try {
+      const { error } = await supabase
+        .from('applications')
+        .update({ submitter: adminId })
+        .eq('id', applicationId);
+  
+      if (error) {
+        throw error;
+      }
+  
+      toast({
+        title: "Success",
+        description: "Admin assigned successfully.",
+      });
+  
+      // Optionally reset
+      setSelectedAdmin("");
+    } catch (err) {
+      console.error(err);
+      toast({
+        title: "Error",
+        description: "Failed to assign admin.",
+        variant: "destructive",
+      });
+    } finally {
+      setProcessingAction(false);
+    }
+  };  
+
+  const handleDownloadAllDocuments = async () => {
+    if (!selectedApplication?.doc_paths || selectedApplication.doc_paths.length === 0) return;
+  
+    const zip = new JSZip();
+  
+    for (const doc of selectedApplication.doc_paths) {
+      try {
+        const response = await fetch(`https://pbvigsmmzasgbuqgwwdt.supabase.co/storage/v1/object/public/documents/${doc}`);
+        const blob = await response.blob();
+        const filename = doc.split("/").pop() || "document";
+  
+        zip.file(filename, blob);
+      } catch (err) {
+        console.error(`Failed to fetch document: ${doc}`, err);
+      }
+    }
+  
+    const zipBlob = await zip.generateAsync({ type: "blob" });
+    saveAs(zipBlob, `application-documents.zip`);
+  };
 
   const handleViewApplication = async (application: any) => {
     setSelectedApplication(application);
@@ -182,6 +305,34 @@ export default function ApplicationsPage() {
       setSelectedApplication((prev: any) => ({ ...prev, docUrls }));
     }
   };
+
+  const handleAssigning = async (application: any) => {
+    setSelectedApplication(application);
+
+    console.log('here')
+
+    if(application.assigned_to != null && application.assigned_to != ""){
+      // Parse the stringified array into an actual array
+      let assignedBankersArray = [];
+
+      try {
+          assignedBankersArray = JSON.parse(application.assigned_to);
+      } catch (error) {
+          console.error("Error parsing assigned_to:", error);
+          assignedBankersArray = []; // Fallback to an empty array if parsing fails
+      }
+
+      setAssignedBankers(assignedBankersArray);
+    }
+
+    setIsAssignDialogOpen(true);
+  }
+
+  const handlePersonInCharge = async (application: any) => {
+    setSelectedApplication(application);
+
+    setIsAssignDialogOpen(false);
+  }
 
   const getDocumentUrls = async (docPaths: string[]) => {
     try {
@@ -396,6 +547,7 @@ export default function ApplicationsPage() {
   }
 
   const getStatusBadge = (status: string) => {
+    console.log(status)
     switch (status.toLowerCase()) {
       case "approved":
         return <span className="inline-block bg-green-500 text-white px-2 py-1 rounded">Approved</span>
@@ -462,10 +614,10 @@ export default function ApplicationsPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Applicant</TableHead>
-                  <TableHead>Loan Type</TableHead>
+                  <TableHead>Property Name</TableHead>
                   <TableHead>Amount</TableHead>
-                  <TableHead>Term</TableHead>
-                  <TableHead>Date Applied</TableHead>
+                  <TableHead>Incharge Admin</TableHead>
+                  <TableHead>Incharge Banker/Bank(s)</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
@@ -474,17 +626,26 @@ export default function ApplicationsPage() {
                 {applications.map((application) => (
                   <TableRow key={application.id}>
                     <TableCell className="font-medium">
-                      {application.first_name} {application.last_name}
+                      {application.full_name}
                     </TableCell>
                     <TableCell className="capitalize">{application.loan_type}</TableCell>
                     <TableCell>{formatCurrency(application.loan_amount)}</TableCell>
                     <TableCell>{application.loan_term} months</TableCell>
-                    <TableCell>{formatDate(application.created_at)}</TableCell>
-                    <TableCell>{getStatusBadge(application.status)}</TableCell>
+                    <TableCell>{application.bank}</TableCell>
+                    <TableCell>{getStatusBadge(application.status_name)}</TableCell>
                     <TableCell>
                       <Button variant="ghost" size="icon" onClick={() => handleViewApplication(application)}>
                         <Eye className="h-4 w-4" />
                       </Button>
+                      {userRole === "admin" && application.status === "7" && (
+                        <Button
+                          variant="secondary"
+                          className="ml-2"
+                          onClick={() => handleAssigning(application)}
+                        >
+                          Assign
+                        </Button>
+                      )}
                       {/* Show Accept button only for banker and if status is pending */}
                       {userRole === "banker" && application.status === "pending" && (
                         <Button
@@ -567,7 +728,7 @@ export default function ApplicationsPage() {
                   <div>
                     <h3 className="font-semibold mb-2">Application Status</h3>
                     <p>
-                      <span className="text-muted-foreground">Status:</span> {getStatusBadge(selectedApplication.status)}
+                      <span className="text-muted-foreground">Status:</span> {getStatusBadge(selectedApplication.status_name)}
                     </p>
                     <p>
                       <span className="text-muted-foreground">Date Applied:</span>{" "}
@@ -602,11 +763,48 @@ export default function ApplicationsPage() {
                       >
                         {processingAction ? 'Assigning...' : 'Assign'}
                       </Button>
+
+                      <div className="my-4 border-t" />
+
+                      {/* Assign to Admin (single-select dropdown) */}
+                      <h3 className="font-semibold mb-2">Assign to Admin</h3>
+                      <select
+                        className="w-full border rounded-md p-2"
+                        value={selectedAdmin}
+                        onChange={(e) => setSelectedAdmin(e.target.value)}
+                      >
+                        <option value="">Select an Admin</option>
+                        {smallAdmins.map((smalladmin) => (
+                          <option key={smalladmin.id} value={smalladmin.id}>
+                            {smalladmin.full_name}
+                          </option>
+                        ))}
+                      </select>
+                      <Button
+                        className="mt-2"
+                        onClick={() => handleAssignAdmin(selectedApplication.id, selectedAdmin)}
+                        disabled={!selectedAdmin || processingAction}
+                      >
+                        {processingAction ? 'Assigning to Admin...' : 'Assign to Admin'}
+                      </Button>
                     </div>
                   )}
 
                   <div>
-                    <h3 className="font-semibold mb-2">Documents</h3>
+                    <div className="flex items-center mb-2">
+                      <h3 className="font-semibold mb-2">Documents</h3>
+                      {selectedApplication?.doc_paths?.length > 0 && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={handleDownloadAllDocuments}
+                          title="Download All Documents"
+                        >
+                          <Download className="h-5 w-5" />
+                        </Button>
+                      )}
+                    </div>
+
                     {Array.isArray(selectedApplication?.doc_paths) && selectedApplication.doc_paths.length > 0 ? (
                       <ul>
                         {selectedApplication.doc_paths.map((doc: string, index: number) => (
@@ -654,6 +852,34 @@ export default function ApplicationsPage() {
           </DialogContent>
         </Dialog>
       )}
+
+      {selectedApplication && (
+        <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
+          <DialogContent className="max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
+            <DialogHeader>
+              <DialogTitle>Assign Person In Charge</DialogTitle>
+              <DialogDescription></DialogDescription>
+            </DialogHeader>
+            <div className="overflow-y-auto pr-2 flex-grow">
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-2 gap-4">
+                  
+                </div>
+              </div>
+            </div>
+            <DialogFooter className="flex justify-between">
+              <Button 
+                  onClick={() => handlePersonInCharge(selectedApplication.id)} 
+                  disabled={!remarks.trim()}
+                >
+                  Requested
+                </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+
     </div>
   )
 }
